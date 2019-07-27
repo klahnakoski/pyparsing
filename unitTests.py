@@ -13,6 +13,7 @@ from unittest import TestCase, TestSuite, TextTestRunner
 import datetime
 from pyparsing import ParseException
 import pyparsing as pp
+from test import runTests
 
 import sys
 

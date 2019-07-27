@@ -1,3 +1,4 @@
+# encoding: utf-8
 from operator import itemgetter
 import warnings
 
@@ -467,7 +468,7 @@ class Each(ParseExpression):
         # (shape and posn are required, color and size are optional)
         shape_spec = shape_attr & posn_attr & Optional(color_attr) & Optional(size_attr)
 
-        shape_spec.runTests('''
+        test.runTests(shape_spec, '''
             shape: SQUARE color: BLACK posn: 100, 120
             shape: CIRCLE size: 50 color: BLUE posn: 50,80
             color:GREEN size:20 shape:TRIANGLE posn:20,40

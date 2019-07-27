@@ -22,6 +22,7 @@ DEBUG = False
 
 
 import pyparsing as pp
+from test import runTests
 
 # define basic exception for invalid state transitions - state machine classes will subclass to
 # define their own specific exception type

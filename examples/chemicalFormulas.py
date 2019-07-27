@@ -6,6 +6,7 @@
 #
 
 import pyparsing as pp
+from test import runTests
 
 atomicWeight = {
     "O"  : 15.9994,

@@ -1,3 +1,4 @@
+# encoding: utf-8
 # jsonParser.py
 #
 # Copyright (c) 2006, Paul McGuire

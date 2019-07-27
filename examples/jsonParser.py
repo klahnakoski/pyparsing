@@ -34,6 +34,7 @@ value
 """
 
 import pyparsing as pp
+from test import runTests
 from pyparsing import pyparsing_common as ppc
 
 def make_keyword(kwd_str, kwd_value):

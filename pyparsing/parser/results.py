@@ -1,3 +1,4 @@
+# encoding: utf-8
 from collections import Mapping, MutableMapping
 from pprint import pprint
 from weakref import ref as wkref

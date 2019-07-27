@@ -6,6 +6,7 @@
 # Copyright (c) 2003, Paul McGuire
 #
 import pyparsing as pp
+from test import runTests
 
 testData = """
 +-------+------+------+------+------+------+------+------+------+

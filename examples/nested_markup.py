@@ -6,6 +6,7 @@
 # Copyright 2019, Paul McGuire
 #
 import pyparsing as pp
+from test import runTests
 
 wiki_markup = pp.Forward()
 

@@ -7,6 +7,7 @@
 # September, 2010 - updated to more current use of setResultsName, new NIST URL
 #
 import pyparsing as pp
+from test import runTests
 ppc = pp.pyparsing_common
 from contextlib import closing
 

@@ -7,6 +7,7 @@
 #
 
 import pyparsing as pp
+from test import runTests
 import urllib.request
 
 

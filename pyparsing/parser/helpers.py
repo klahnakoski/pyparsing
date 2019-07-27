@@ -1,3 +1,4 @@
+# encoding: utf-8
 from datetime import datetime
 import re
 import warnings
@@ -434,7 +435,7 @@ def tokenMap(func, *args):
     Example (compare the last to example in :class:`ParserElement.transformString`::
 
         hex_ints = OneOrMore(Word(hexnums)).setParseAction(tokenMap(int, 16))
-        hex_ints.runTests('''
+        test.runTests(hex_ints, '''
             00 11 22 aa FF 0a 0d 1a
             ''')
 
@@ -715,7 +716,7 @@ def infixNotation(baseExpr, opList, lpar=Suppress('('), rpar=Suppress(')')):
             (oneOf('+ -'), 2, opAssoc.LEFT),
             ])
 
-        arith_expr.runTests('''
+        test.runTests(arith_expr, '''
             5+3*6
             (5+3)*6
             -2--11
@@ -1097,7 +1098,7 @@ class pyparsing_common:
 
     Example::
 
-        pyparsing_common.number.runTests('''
+        test.runTests(pyparsing_common.number, '''
             # any int or real number, returned as the appropriate type
             100
             -100
@@ -1107,7 +1108,7 @@ class pyparsing_common:
             1e-12
             ''')
 
-        pyparsing_common.fnumber.runTests('''
+        test.runTests(pyparsing_common.fnumber, '''
             # any int or real number, returned as float
             100
             -100
@@ -1117,19 +1118,19 @@ class pyparsing_common:
             1e-12
             ''')
 
-        pyparsing_common.hex_integer.runTests('''
+        test.runTests(pyparsing_common.hex_integer, '''
             # hex numbers
             100
             FF
             ''')
 
-        pyparsing_common.fraction.runTests('''
+        test.runTests(pyparsing_common.fraction, '''
             # fractions
             1/2
             -3/4
             ''')
 
-        pyparsing_common.mixed_integer.runTests('''
+        test.runTests(pyparsing_common.mixed_integer, '''
             # mixed fractions
             1
             1/2
@@ -1139,7 +1140,7 @@ class pyparsing_common:
 
         import uuid
         pyparsing_common.uuid.setParseAction(tokenMap(uuid.UUID))
-        pyparsing_common.uuid.runTests('''
+        test.runTests(pyparsing_common.uuid, '''
             # uuid
             12345678-1234-5678-1234-567812345678
             ''')

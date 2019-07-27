@@ -44,6 +44,7 @@ BNF reference: http://theory.lcs.mit.edu/~rivest/sexp.txt
 """
 
 import pyparsing as pp
+from test import runTests
 from base64 import b64decode
 import pprint
 

@@ -4,6 +4,7 @@
 #
 from __future__ import print_function
 import pyparsing as pp
+from test import runTests
 
 
 cvtBool = lambda t:t[0]=='True'

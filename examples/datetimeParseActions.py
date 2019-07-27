@@ -7,6 +7,7 @@
 #
 from datetime import datetime
 import pyparsing as pp
+from test import runTests
 from pyparsing import pyparsing_common as ppc
 
 # define an integer string, and a parse action to convert it

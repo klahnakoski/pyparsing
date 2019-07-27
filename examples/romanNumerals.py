@@ -4,6 +4,7 @@
 #
 
 from pyparsing import *
+from test import runTests
 
 def romanNumeralLiteral(numeralString, value):
     return Literal(numeralString).setParseAction(replaceWith(value))

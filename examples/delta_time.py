@@ -32,7 +32,9 @@
 
 from datetime import datetime, time, timedelta
 import pyparsing as pp
+from test import runTests
 import calendar
+from test import runTests
 
 __all__ = ["time_expression"]
 

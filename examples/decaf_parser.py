@@ -12,35 +12,36 @@
 """
     Program ::= Decl+
     Decl ::= VariableDecl | FunctionDecl  | ClassDecl | InterfaceDecl
-    VariableDecl ::= Variable ; 
-    Variable ::= Type ident 
-    Type ::= int | double | bool | string | ident | Type [] 
-    FunctionDecl ::= Type ident ( Formals ) StmtBlock | void ident ( Formals ) StmtBlock 
-    Formals ::= Variable+, |  e 
-    ClassDecl ::= class ident <extends ident>  <implements ident + ,>  { Field* } 
-    Field ::= VariableDecl | FunctionDecl 
-    InterfaceDecl ::= interface ident { Prototype* } 
-    Prototype ::= Type ident ( Formals ) ; | void ident ( Formals ) ; 
-    StmtBlock ::= { VariableDecl*  Stmt* } 
-    Stmt ::=  <Expr> ; | IfStmt  | WhileStmt |  ForStmt | BreakStmt   | ReturnStmt  | PrintStmt  | StmtBlock 
-    IfStmt ::= if ( Expr ) Stmt <else Stmt> 
-    WhileStmt ::= while ( Expr ) Stmt 
-    ForStmt ::= for ( <Expr> ; Expr ; <Expr> ) Stmt 
-    ReturnStmt ::= return <Expr> ; 
-    BreakStmt ::= break ; 
-    PrintStmt ::= Print ( Expr+, ) ; 
+    VariableDecl ::= Variable ;
+    Variable ::= Type ident
+    Type ::= int | double | bool | string | ident | Type []
+    FunctionDecl ::= Type ident ( Formals ) StmtBlock | void ident ( Formals ) StmtBlock
+    Formals ::= Variable+, |  e
+    ClassDecl ::= class ident <extends ident>  <implements ident + ,>  { Field* }
+    Field ::= VariableDecl | FunctionDecl
+    InterfaceDecl ::= interface ident { Prototype* }
+    Prototype ::= Type ident ( Formals ) ; | void ident ( Formals ) ;
+    StmtBlock ::= { VariableDecl*  Stmt* }
+    Stmt ::=  <Expr> ; | IfStmt  | WhileStmt |  ForStmt | BreakStmt   | ReturnStmt  | PrintStmt  | StmtBlock
+    IfStmt ::= if ( Expr ) Stmt <else Stmt>
+    WhileStmt ::= while ( Expr ) Stmt
+    ForStmt ::= for ( <Expr> ; Expr ; <Expr> ) Stmt
+    ReturnStmt ::= return <Expr> ;
+    BreakStmt ::= break ;
+    PrintStmt ::= Print ( Expr+, ) ;
     Expr ::= LValue = Expr | Constant | LValue | this | Call
-            | ( Expr ) 
-            | Expr + Expr | Expr - Expr | Expr * Expr | Expr / Expr |  Expr % Expr | - Expr 
-            | Expr < Expr | Expr <= Expr | Expr > Expr | Expr >= Expr | Expr == Expr | Expr != Expr 
-            | Expr && Expr | Expr || Expr | ! Expr 
-            | ReadInteger ( ) | ReadLine ( ) | new ident | NewArray ( Expr , Typev) 
-    LValue ::= ident |  Expr  . ident | Expr [ Expr ] 
-    Call ::= ident  ( Actuals ) |  Expr  .  ident  ( Actuals ) 
-    Actuals ::=  Expr+, | e 
+            | ( Expr )
+            | Expr + Expr | Expr - Expr | Expr * Expr | Expr / Expr |  Expr % Expr | - Expr
+            | Expr < Expr | Expr <= Expr | Expr > Expr | Expr >= Expr | Expr == Expr | Expr != Expr
+            | Expr && Expr | Expr || Expr | ! Expr
+            | ReadInteger ( ) | ReadLine ( ) | new ident | NewArray ( Expr , Typev)
+    LValue ::= ident |  Expr  . ident | Expr [ Expr ]
+    Call ::= ident  ( Actuals ) |  Expr  .  ident  ( Actuals )
+    Actuals ::=  Expr+, | e
     Constant ::= intConstant | doubleConstant | boolConstant |  stringConstant | null
 """
 import pyparsing as pp
+from test import runTests
 from pyparsing import pyparsing_common as ppc
 pp.ParserElement.enablePackrat()
 
@@ -70,8 +71,8 @@ expr_parens = pp.Group(LPAR + expr + RPAR)
 actuals = pp.Optional(pp.delimitedList(expr))
 call = pp.Group(ident("call_ident") + LPAR + actuals("call_args") + RPAR
                 | (expr_parens + pp.ZeroOrMore(DOT + ident))("call_ident_expr") + LPAR + actuals("call_args") + RPAR)
-lvalue = ((ident | expr_parens) 
-           + pp.ZeroOrMore(DOT + (ident | expr_parens)) 
+lvalue = ((ident | expr_parens)
+           + pp.ZeroOrMore(DOT + (ident | expr_parens))
            + pp.ZeroOrMore(LBRACK + expr + RBRACK))
 assignment = pp.Group(lvalue("lhs") + EQ + expr("rhs"))
 read_integer = pp.Group(READINTEGER + LPAR + RPAR)
@@ -85,7 +86,7 @@ arith_expr = pp.infixNotation(rvalue,
     (pp.oneOf("* / %"), 2, pp.opAssoc.LEFT,),
     (pp.oneOf("+ -"), 2, pp.opAssoc.LEFT,),
     ])
-comparison_expr = pp.infixNotation(arith_expr, 
+comparison_expr = pp.infixNotation(arith_expr,
     [
     ('!', 1, pp.opAssoc.RIGHT,),
     (pp.oneOf("< > <= >="), 2, pp.opAssoc.LEFT,),

@@ -14,6 +14,7 @@ try:
 except ImportError:
     import unittest
 import pyparsing as pp
+from test import runTests
 from collections import namedtuple
 from datetime import datetime
 
@@ -29,7 +30,7 @@ class PyparsingExpressionTestCase(unittest.TestCase):
     given text strings. Subclasses must define a class attribute 'tests' which
     is a list of PpTestSpec instances.
     """
-    
+
     if not hasattr(unittest.TestCase, 'subTest'):
         # Python 2 compatibility
         from contextlib import contextmanager
@@ -37,7 +38,7 @@ class PyparsingExpressionTestCase(unittest.TestCase):
         def subTest(self, **params):
             print('subTest:', params)
             yield
-    
+
     tests = []
     def runTest(self):
         if self.__class__ is PyparsingExpressionTestCase:

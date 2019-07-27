@@ -12,6 +12,7 @@
 # Copyright 2006, by Paul McGuire
 #
 import pyparsing as pp
+from test import runTests
 
 line_end = pp.LineEnd()
 

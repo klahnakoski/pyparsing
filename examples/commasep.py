@@ -10,6 +10,8 @@
 #
 
 import pyparsing as pp
+from test import runTests
+
 ppc = pp.pyparsing_common
 
 testData = [

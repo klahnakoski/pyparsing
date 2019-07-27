@@ -6,6 +6,7 @@
 #  to define
 #
 import pyparsing as pp
+from test import runTests
 
 data = """\
     <td align=right width=80><font size=2 face="New Times Roman,Times,Serif">&nbsp;49.950&nbsp;</font></td>

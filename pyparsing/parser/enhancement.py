@@ -1,3 +1,4 @@
+# encoding: utf-8
 import warnings
 
 from pyparsing.exceptions import ParseBaseException, ParseException, RecursiveGrammarException
@@ -385,7 +386,7 @@ class Optional(ParseElementEnhance):
 
         # US postal code can be a 5-digit zip, plus optional 4-digit qualifier
         zip = Combine(Word(nums, exact=5) + Optional('-' + Word(nums, exact=4)))
-        zip.runTests('''
+        test.runTests(zip, '''
             # traditional ZIP code
             12345
 

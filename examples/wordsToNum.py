@@ -4,6 +4,7 @@
 # Sample parser grammar to read a number given in words, and return the numeric value.
 #
 import pyparsing as pp
+from test import runTests
 from operator import mul
 from functools import reduce
 

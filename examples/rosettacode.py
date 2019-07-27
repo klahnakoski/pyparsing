@@ -35,6 +35,7 @@ BNF = """
 """
 
 import pyparsing as pp
+from test import runTests
 pp.ParserElement.enablePackrat()
 
 LBRACE, RBRACE, LPAR, RPAR, SEMI = map(pp.Suppress, "{}();")
