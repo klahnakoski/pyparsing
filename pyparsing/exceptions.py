@@ -1,6 +1,7 @@
+from functools import wraps
 import sys
 
-from pyparsing.utils import _ustr, col, line, lineno
+from pyparsing.utils import _trim_arity, _ustr, col, line, lineno
 
 
 class ParseBaseException(Exception):
@@ -195,3 +196,17 @@ class RecursiveGrammarException(Exception):
 
     def __str__(self):
         return "RecursiveGrammarException: %s" % self.parseElementTrace
+
+
+def conditionAsParseAction(fn, message=None, fatal=False):
+    msg = message if message is not None else "failed user-defined condition"
+    exc_type = ParseFatalException if fatal else ParseException
+    fn = _trim_arity(fn)
+
+    @wraps(fn)
+    def pa(s, l, t):
+        if not bool(fn(s, l, t)):
+            raise exc_type(s, l, msg)
+
+    return pa
+

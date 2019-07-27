@@ -1,3 +1,5 @@
+import traceback
+import string
 import sys
 
 
@@ -16,10 +18,11 @@ try:
     # Python 3
     from collections.abc import Iterable
     from collections.abc import MutableMapping, Mapping
+    from collection import deque
 except ImportError:
     # Python 2.7
     from collections import Iterable
-    from collections import MutableMapping, Mapping
+    from collections import MutableMapping, Mapping, deque
 
 try:
     from collections import OrderedDict as _OrderedDict
@@ -90,6 +93,31 @@ else:
 
 _generatorType = type((y for y in range(1)))
 
+# version compatibility configuration
+__compat__ = SimpleNamespace()
+__compat__.__doc__ = """
+    A cross-version compatibility configuration for pyparsing features that will be
+    released in a future version. By setting values in this configuration to True,
+    those features can be enabled in prior versions for compatibility development
+    and testing.
+
+     - collect_all_And_tokens - flag to enable fix for Issue #63 that fixes erroneous grouping
+       of results names when an And expression is nested within an Or or MatchFirst; set to
+       True to enable bugfix released in pyparsing 2.3.0, or False to preserve
+       pre-2.3.0 handling of named results
+"""
+__compat__.collect_all_And_tokens = True
+
+
+alphas = string.ascii_uppercase + string.ascii_lowercase
+nums = "0123456789"
+hexnums = nums + "ABCDEFabcdef"
+alphanums = alphas + nums
+_bslash = chr(92)
+printables = "".join(c for c in string.printable if c not in string.whitespace)
+
+
+
 
 def col (loc, strg):
     """Returns current column within a string, counting newlines as line separators.
@@ -126,3 +154,98 @@ def line(loc, strg):
         return strg[lastCR + 1:nextCR]
     else:
         return strg[lastCR + 1:]
+
+
+# this version is Python 2.x-3.x cross-compatible
+'decorator to trim function calls to match the arity of the target'
+def _trim_arity(func, maxargs=2):
+    if func in singleArgBuiltins:
+        return lambda s, l, t: func(t)
+    limit = [0]
+    foundArity = [False]
+
+    # traceback return data structure changed in Py3.5 - normalize back to plain tuples
+    if system_version[:2] >= (3, 5):
+        def extract_stack(limit=0):
+            # special handling for Python 3.5.0 - extra deep call stack by 1
+            offset = -3 if system_version == (3, 5, 0) else -2
+            frame_summary = traceback.extract_stack(limit=-offset + limit - 1)[offset]
+            return [frame_summary[:2]]
+        def extract_tb(tb, limit=0):
+            frames = traceback.extract_tb(tb, limit=limit)
+            frame_summary = frames[-1]
+            return [frame_summary[:2]]
+    else:
+        extract_stack = traceback.extract_stack
+        extract_tb = traceback.extract_tb
+
+    # synthesize what would be returned by traceback.extract_stack at the call to
+    # user's parse action 'func', so that we don't incur call penalty at parse time
+
+    LINE_DIFF = 6
+    # IF ANY CODE CHANGES, EVEN JUST COMMENTS OR BLANK LINES, BETWEEN THE NEXT LINE AND
+    # THE CALL TO FUNC INSIDE WRAPPER, LINE_DIFF MUST BE MODIFIED!!!!
+    this_line = extract_stack(limit=2)[-1]
+    pa_call_line_synth = (this_line[0], this_line[1] + LINE_DIFF)
+
+    def wrapper(*args):
+        while 1:
+            try:
+                ret = func(*args[limit[0]:])
+                foundArity[0] = True
+                return ret
+            except TypeError:
+                # re-raise TypeErrors if they did not come from our arity testing
+                if foundArity[0]:
+                    raise
+                else:
+                    try:
+                        tb = sys.exc_info()[-1]
+                        if not extract_tb(tb, limit=2)[-1][:2] == pa_call_line_synth:
+                            raise
+                    finally:
+                        try:
+                            del tb
+                        except NameError:
+                            pass
+
+                if limit[0] <= maxargs:
+                    limit[0] += 1
+                    continue
+                raise
+
+    # copy func name to wrapper for sensible debug output
+    func_name = "<parse action>"
+    try:
+        func_name = getattr(func, '__name__',
+                            getattr(func, '__class__').__name__)
+    except Exception:
+        func_name = str(func)
+    wrapper.__name__ = func_name
+
+    return wrapper
+
+
+def _xml_escape(data):
+    """Escape &, <, >, ", ', etc. in a string of data."""
+
+    # ampersand must be replaced first
+    from_symbols = '&><"\''
+    to_symbols = ('&' + s + ';' for s in "amp gt lt quot apos".split())
+    for from_, to_ in zip(from_symbols, to_symbols):
+        data = data.replace(from_, to_)
+    return data
+
+def _defaultStartDebugAction(instring, loc, expr):
+    print(("Match " + _ustr(expr) + " at loc " + _ustr(loc) + "(%d,%d)" % (lineno(loc, instring), col(loc, instring))))
+
+def _defaultSuccessDebugAction(instring, startloc, endloc, expr, toks):
+    print("Matched " + _ustr(expr) + " -> " + str(toks.asList()))
+
+def _defaultExceptionDebugAction(instring, loc, expr, exc):
+    print("Exception raised:" + _ustr(exc))
+
+def nullDebugAction(*args):
+    """'Do-nothing' debug action, to suppress debugging output during parsing."""
+    pass
+
