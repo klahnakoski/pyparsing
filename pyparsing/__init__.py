@@ -105,7 +105,7 @@ from pyparsing.expressions import And, Each, MatchFirst, Or, ParseExpression
 from pyparsing.parser.base import ParserElement, _PendingSkip, __diag__
 from pyparsing.parser.enhancement import CharsNotIn, Combine, Dict, FollowedBy, Forward, Group, Keyword, Literal, NotAny, OneOrMore, Optional, ParseElementEnhance, PrecededBy, SkipTo, StringEnd, Suppress, Token, TokenConverter, ZeroOrMore
 from pyparsing.parser.helpers import alphas8bit, anyCloseTag, anyOpenTag, cStyleComment, commaSeparatedList, commonHTMLEntity, countedArray, cppStyleComment, dblQuotedString, dblSlashComment, delimitedList, dictOf, downcaseTokens, downcaseTokens, empty, empty, hexnums, htmlComment, htmlComment, indentedBlock, infixNotation, javaStyleComment, javaStyleComment, lineEnd, lineEnd, lineStart, lineStart, locatedExpr, makeHTMLTags, makeXMLTags, matchOnlyAtCol, matchPreviousExpr, matchPreviousLiteral, nestedExpr, nums, oneOf, opAssoc, opAssoc, operatorPrecedence, operatorPrecedence, originalTextFor, printables, punc8bit, punc8bit, pyparsing_common, pyparsing_common, pythonStyleComment, pythonStyleComment, quotedString, quotedString, removeQuotes, replaceHTMLEntity, replaceWith, replaceWith, restOfLine, restOfLine, sglQuotedString, sglQuotedString, srange, stringEnd, stringEnd, stringStart, stringStart, tokenMap, tokenMap, ungroup, unicodeString, unicodeString, upcaseTokens, upcaseTokens, \
-    withAttribute, withAttribute, withClass
+    withAttribute, withAttribute, withClass, commaSeparatedList
 from pyparsing.parser.results import ParseResults
 from pyparsing.tokens import CaselessKeyword, CaselessLiteral, Char, CloseMatch, Empty, GoToColumn, LineEnd, LineStart, NoMatch, QuotedString, Regex, StringStart, White, Word, WordEnd, WordStart
 from pyparsing.utils import PY_3, _MAX_INT, __compat__, _generatorType, _trim_arity, _ustr, alphanums, alphas, basestring, col, hexnums, line, lineno, nullDebugAction, nums, printables, pyparsing_unicode, singleArgBuiltins, system_version, traceParseAction, unichr, unicode, unicode_set
@@ -133,26 +133,3 @@ __all__ = ['__version__', '__versionTime__', '__author__', '__compat__', '__diag
            'CloseMatch', 'tokenMap', 'pyparsing_common', 'pyparsing_unicode', 'unicode_set',
            'conditionAsParseAction',
            ]
-
-# Only works on Python 3.x - nonlocal is toxic to Python 2 installs
-#~ 'decorator to trim function calls to match the arity of the target'
-#~ def _trim_arity(func, maxargs=3):
-    #~ if func in singleArgBuiltins:
-        #~ return lambda s,l,t: func(t)
-    #~ limit = 0
-    #~ foundArity = False
-    #~ def wrapper(*args):
-        #~ nonlocal limit,foundArity
-        #~ while 1:
-            #~ try:
-                #~ ret = func(*args[limit:])
-                #~ foundArity = True
-                #~ return ret
-            #~ except TypeError:
-                #~ if limit == maxargs or foundArity:
-                    #~ raise
-                #~ limit += 1
-                #~ continue
-    #~ return wrapper
-
-

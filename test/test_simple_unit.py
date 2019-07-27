@@ -9,10 +9,7 @@
 #
 from __future__ import division
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 import pyparsing as pp
 from collections import namedtuple
 from datetime import datetime
