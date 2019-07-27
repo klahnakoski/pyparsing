@@ -149,37 +149,37 @@ _parser = None
 def parser():
     global _parser
     if _parser is None:
-        ParserElement.setDefaultWhitespaceChars("")
-        lbrack,rbrack,lbrace,rbrace,lparen,rparen,colon,qmark = map(Literal,"[]{}():?")
+        with ParserElement.setDefaultWhitespaceChars(""):
+            lbrack,rbrack,lbrace,rbrace,lparen,rparen,colon,qmark = map(Literal,"[]{}():?")
 
-        reMacro = Combine("\\" + oneOf(list("dws")))
-        escapedChar = ~reMacro + Combine("\\" + oneOf(list(printables)))
-        reLiteralChar = "".join(c for c in printables if c not in r"\[]{}().*?+|") + " \t"
+            reMacro = Combine("\\" + oneOf(list("dws")))
+            escapedChar = ~reMacro + Combine("\\" + oneOf(list(printables)))
+            reLiteralChar = "".join(c for c in printables if c not in r"\[]{}().*?+|") + " \t"
 
-        reRange = Combine(lbrack + SkipTo(rbrack,ignore=escapedChar) + rbrack)
-        reLiteral = ( escapedChar | oneOf(list(reLiteralChar)) )
-        reNonCaptureGroup = Suppress("?:")
-        reDot = Literal(".")
-        repetition = (
-            ( lbrace + Word(nums)("count") + rbrace ) |
-            ( lbrace + Word(nums)("minCount")+","+ Word(nums)("maxCount") + rbrace ) |
-            oneOf(list("*+?"))
-            )
+            reRange = Combine(lbrack + SkipTo(rbrack,ignore=escapedChar) + rbrack)
+            reLiteral = ( escapedChar | oneOf(list(reLiteralChar)) )
+            reNonCaptureGroup = Suppress("?:")
+            reDot = Literal(".")
+            repetition = (
+                ( lbrace + Word(nums)("count") + rbrace ) |
+                ( lbrace + Word(nums)("minCount")+","+ Word(nums)("maxCount") + rbrace ) |
+                oneOf(list("*+?"))
+                )
 
-        reRange.setParseAction(handleRange)
-        reLiteral.setParseAction(handleLiteral)
-        reMacro.setParseAction(handleMacro)
-        reDot.setParseAction(handleDot)
+            reRange.setParseAction(handleRange)
+            reLiteral.setParseAction(handleLiteral)
+            reMacro.setParseAction(handleMacro)
+            reDot.setParseAction(handleDot)
 
-        reTerm = ( reLiteral | reRange | reMacro | reDot | reNonCaptureGroup)
-        reExpr = infixNotation( reTerm,
-            [
-            (repetition, 1, opAssoc.LEFT, handleRepetition),
-            (None, 2, opAssoc.LEFT, handleSequence),
-            (Suppress('|'), 2, opAssoc.LEFT, handleAlternative),
-            ]
-            )
-        _parser = reExpr
+            reTerm = ( reLiteral | reRange | reMacro | reDot | reNonCaptureGroup)
+            reExpr = infixNotation( reTerm,
+                [
+                (repetition, 1, opAssoc.LEFT, handleRepetition),
+                (None, 2, opAssoc.LEFT, handleSequence),
+                (Suppress('|'), 2, opAssoc.LEFT, handleAlternative),
+                ]
+                )
+            _parser = reExpr
 
     return _parser
 

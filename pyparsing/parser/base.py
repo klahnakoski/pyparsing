@@ -1,4 +1,5 @@
 # encoding: utf-8
+from contextlib import contextmanager
 import copy
 from copy import copy
 import types
@@ -35,6 +36,26 @@ __diag__.warn_on_multiple_string_args_to_oneof = False
 __diag__.enable_debug_on_named_expressions = False
 
 
+@contextmanager
+def use_whitespace(chars):
+    r"""
+    Overrides the default whitespace chars
+
+    Example::
+
+        # default whitespace chars are space, <TAB> and newline
+        OneOrMore(Word(alphas)).parseString("abc def\nghi jkl")  # -> ['abc', 'def', 'ghi', 'jkl']
+
+        # change to just treat newline as significant
+        ParserElement.setDefaultWhitespaceChars(" \t")
+        OneOrMore(Word(alphas)).parseString("abc def\nghi jkl")  # -> ['abc', 'def']
+    """
+    old_value = ParserElement.DEFAULT_WHITE_CHARS
+    ParserElement.DEFAULT_WHITE_CHARS = chars
+    yield
+    ParserElement.DEFAULT_WHITE_CHARS = old_value
+
+
 class ParserElement(object):
     """Abstract base level parser element class."""
     DEFAULT_WHITE_CHARS = " \n\t\r"
@@ -54,7 +75,7 @@ class ParserElement(object):
             ParserElement.setDefaultWhitespaceChars(" \t")
             OneOrMore(Word(alphas)).parseString("abc def\nghi jkl")  # -> ['abc', 'def']
         """
-        ParserElement.DEFAULT_WHITE_CHARS = chars
+        return use_whitespace(chars)
 
     @staticmethod
     def inlineLiteralsUsing(cls):

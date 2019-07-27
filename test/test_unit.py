@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 #
 # unitTests.py
 #
@@ -9,13 +9,12 @@
 #
 from __future__ import division
 
-from unittest import TestCase, TestSuite, TextTestRunner
 import datetime
-from pyparsing import ParseException
-import pyparsing as pp
-from test import runTests
-
 import sys
+from unittest import TestCase, TestSuite
+
+from pyparsing import Literal, ParseBaseException, ParseException, SkipTo, cStyleComment, ParserElement
+import pyparsing as pp
 
 PY_3 = sys.version.startswith('3')
 if PY_3:
@@ -1052,9 +1051,6 @@ class TestReStringRangeTest(TestCase):
 
 class TestSkipToParserTests(TestCase):
     def runTest(self):
-
-        from pyparsing import Literal, SkipTo, cStyleComment, ParseBaseException, And, Word, alphas, nums, Optional, NotAny
-
         thingToFind = Literal('working')
         testExpr = SkipTo(Literal(';'), include=True, ignore=cStyleComment) + thingToFind
 
@@ -1087,7 +1083,7 @@ class TestSkipToParserTests(TestCase):
 
         if PY_3:
             def define_expr(s):
-                from pyparsing import Literal, And, Word, alphas, nums, Optional, NotAny
+                from pyparsing import Literal, And, Word, alphas, nums, Optional
                 alpha_word = (~Literal("end") + Word(alphas, asKeyword=True)).setName("alpha")
                 num_word = Word(nums, asKeyword=True).setName("int")
 
@@ -2099,24 +2095,24 @@ class TestLineStartTest(TestCase):
 
         with AutoReset(pp.ParserElement, "DEFAULT_WHITE_CHARS"):
             print_(r'no \n in default whitespace chars')
-            pp.ParserElement.setDefaultWhitespaceChars(' ')
+            with ParserElement.setDefaultWhitespaceChars(' '):
 
-            test_patt = pp.Word('A') - pp.LineStart() + pp.Word('B')
-            print_(test_patt.streamline())
-            # should fail the pass tests too, since \n is no longer valid whitespace and we aren't parsing for it
-            success = test_patt.runTests(pass_tests, failureTests=True)[0]
-            self.assertTrue(success, "failed LineStart passing tests (2)")
+                test_patt = pp.Word('A') - pp.LineStart() + pp.Word('B')
+                print_(test_patt.streamline())
+                # should fail the pass tests too, since \n is no longer valid whitespace and we aren't parsing for it
+                success = test_patt.runTests(pass_tests, failureTests=True)[0]
+                self.assertTrue(success, "failed LineStart passing tests (2)")
 
-            success = test_patt.runTests(fail_tests, failureTests=True)[0]
-            self.assertTrue(success, "failed LineStart failure mode tests (2)")
+                success = test_patt.runTests(fail_tests, failureTests=True)[0]
+                self.assertTrue(success, "failed LineStart failure mode tests (2)")
 
-            test_patt = pp.Word('A') - pp.LineEnd().suppress() + pp.LineStart() + pp.Word('B') + pp.LineEnd().suppress()
-            print_(test_patt.streamline())
-            success = test_patt.runTests(pass_tests)[0]
-            self.assertTrue(success, "failed LineStart passing tests (3)")
+                test_patt = pp.Word('A') - pp.LineEnd().suppress() + pp.LineStart() + pp.Word('B') + pp.LineEnd().suppress()
+                print_(test_patt.streamline())
+                success = test_patt.runTests(pass_tests)[0]
+                self.assertTrue(success, "failed LineStart passing tests (3)")
 
-            success = test_patt.runTests(fail_tests, failureTests=True)[0]
-            self.assertTrue(success, "failed LineStart failure mode tests (3)")
+                success = test_patt.runTests(fail_tests, failureTests=True)[0]
+                self.assertTrue(success, "failed LineStart failure mode tests (3)")
 
         test = """\
         AAA 1
@@ -2138,11 +2134,11 @@ class TestLineStartTest(TestCase):
             self.assertEqual(test[s], 'A', 'failed LineStart with insignificant newlines')
 
         with AutoReset(pp.ParserElement, "DEFAULT_WHITE_CHARS"):
-            pp.ParserElement.setDefaultWhitespaceChars(' ')
-            for t, s, e in (pp.LineStart() + 'AAA').scanString(test):
-                print_(s, e, pp.lineno(s, test), pp.line(s, test), ord(test[s]))
-                print_()
-                self.assertEqual(test[s], 'A', 'failed LineStart with insignificant newlines')
+            with ParserElement.setDefaultWhitespaceChars(' '):
+                for t, s, e in (pp.LineStart() + 'AAA').scanString(test):
+                    print_(s, e, pp.lineno(s, test), pp.line(s, test), ord(test[s]))
+                    print_()
+                    self.assertEqual(test[s], 'A', 'failed LineStart with insignificant newlines')
 
 
 class TestLineAndStringEndTest(TestCase):
@@ -4098,16 +4094,17 @@ class TestUnicodeTests(TestCase):
                          set(ppu.Latin1.nums + ppu.LatinA.nums),
                          "failed to construct ranges by merging Latin1 and LatinA (nums)")
 
-        key = pp.Word(Turkish_set.alphas)
-        value = ppc.integer | pp.Word(Turkish_set.alphas, Turkish_set.alphanums)
+        debug = (None, None, None)
+        key = pp.Word(Turkish_set.alphas).setDebugActions(*debug)
+        value = (ppc.integer | pp.Word(Turkish_set.alphas, Turkish_set.alphanums)).setDebugActions(*debug)
         EQ = pp.Suppress('=')
-        key_value = key + EQ + value
+        key_value = (key + EQ + value).setDebugActions(*debug)
 
         sample = u"""\
             şehir=İzmir
             ülke=Türkiye
             nüfus=4279677"""
-        result = pp.Dict(pp.OneOrMore(pp.Group(key_value))).parseString(sample)
+        result = pp.Dict(pp.OneOrMore(pp.Group(key_value).setDebugActions(*debug)).setDebugActions(*debug)).parseString(sample)
 
         print_(result.asDict())
         self.assertEqual(result.asDict(), {u'şehir': u'İzmir', u'ülke': u'Türkiye', u'nüfus': 4279677},
