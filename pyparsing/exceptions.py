@@ -198,6 +198,22 @@ class RecursiveGrammarException(Exception):
         return "RecursiveGrammarException: %s" % self.parseElementTrace
 
 
+class OnlyOnce(object):
+    """Wrapper for parse actions, to ensure they are only called once.
+    """
+    def __init__(self, methodCall):
+        self.callable = _trim_arity(methodCall)
+        self.called = False
+    def __call__(self, s, l, t):
+        if not self.called:
+            results = self.callable(s, l, t)
+            self.called = True
+            return results
+        raise ParseException(s, l, "")
+    def reset(self):
+        self.called = False
+
+
 def conditionAsParseAction(fn, message=None, fatal=False):
     msg = message if message is not None else "failed user-defined condition"
     exc_type = ParseFatalException if fatal else ParseException
