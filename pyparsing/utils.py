@@ -5,6 +5,8 @@ import string
 import sys
 import traceback
 
+from mo_logs import Log
+
 try:
     # Python 3
     from itertools import filterfalse
@@ -239,13 +241,13 @@ def _xml_escape(data):
     return data
 
 def _defaultStartDebugAction(instring, loc, expr):
-    print(("Match " + _ustr(expr) + " at loc " + _ustr(loc) + "(%d,%d)" % (lineno(loc, instring), col(loc, instring))))
+    Log.note("Match " + _ustr(expr) + " at loc " + _ustr(loc) + "(%d,%d)" % (lineno(loc, instring), col(loc, instring)))
 
 def _defaultSuccessDebugAction(instring, startloc, endloc, expr, toks):
-    print("Matched " + _ustr(expr) + " -> " + str(toks.asList()))
+    Log.note("Matched " + _ustr(expr) + " -> " + str(toks.asList()))
 
 def _defaultExceptionDebugAction(instring, loc, expr, exc):
-    print("Exception raised:" + _ustr(exc))
+    Log.note("Exception raised:" + _ustr(exc))
 
 def nullDebugAction(*args):
     """'Do-nothing' debug action, to suppress debugging output during parsing."""
