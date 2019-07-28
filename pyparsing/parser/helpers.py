@@ -7,7 +7,7 @@ from pyparsing.exceptions import ParseException
 from pyparsing.parser.base import ParserElement
 from pyparsing.parser.enhancement import Combine, Dict, FollowedBy, Forward, Group, OneOrMore, Optional, SkipTo, Suppress, TokenConverter, ZeroOrMore
 from pyparsing.parser.results import ParseResults
-from pyparsing.tokens import CaselessKeyword, CaselessLiteral, CharsNotIn, Empty, Keyword, LineEnd, LineStart, Literal, NoMatch, Regex, StringEnd, StringStart, White, Word, _L, _escapeRegexRangeChars
+from pyparsing.parser.tokens import CaselessKeyword, CaselessLiteral, CharsNotIn, Empty, Keyword, LineEnd, LineStart, Literal, NoMatch, Regex, StringEnd, StringStart, White, Word, _L, _escapeRegexRangeChars
 from pyparsing.utils import Iterable, SimpleNamespace, _bslash, _ustr, alphanums, alphas, basestring, col, hexnums, nums, printables, unichr
 
 # import later

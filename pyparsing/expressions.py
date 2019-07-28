@@ -6,7 +6,7 @@ from pyparsing.exceptions import ParseBaseException, ParseException, ParseSyntax
 from pyparsing.parser.base import ParserElement, __diag__, _PendingSkip
 from pyparsing.parser.enhancement import OneOrMore, Optional, SkipTo, Suppress, ZeroOrMore
 from pyparsing.parser.results import ParseResults
-from pyparsing.tokens import Empty
+from pyparsing.parser.tokens import Empty
 from pyparsing.utils import Iterable, __compat__, _generatorType, _ustr, basestring
 
 
