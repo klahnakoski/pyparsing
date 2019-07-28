@@ -13,6 +13,8 @@ from pyparsing.utils import PY_3, RLock, SimpleNamespace, _MAX_INT, _OrderedDict
 SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith, quotedString, And, MatchFirst, Or, Each, Empty, StringEnd, Literal, Token = [None] * 17
 
 
+DEBUG = True
+
 __diag__ = SimpleNamespace()
 __diag__.__doc__ = """
 Diagnostic configuration (all default to False)
@@ -116,7 +118,7 @@ class ParserElement(object):
         self.mayIndexError = True # used to optimize exception handling for subclasses that don't advance parse index
         self.errmsg = ""
         self.modalResults = True # used to mark results names as modal (report only last) or cumulative (list all)
-        self.debugActions = (None, None, None)  # custom debug actions
+        self.debugActions = (_defaultStartDebugAction, _defaultSuccessDebugAction, _defaultExceptionDebugAction)  # custom debug actions
         self.re = None
         self.callPreparse = True # used to avoid redundant calls to preParse
         self.callDuringTry = False
@@ -361,7 +363,7 @@ class ParserElement(object):
     # ~ @profile
     def _parseNoCache(self, instring, loc, doActions=True, callPreParse=True):
         TRY, MATCH, FAIL = 0, 1, 2
-        debugging = (self.debug)  # and doActions)
+        debugging = self.debug or DEBUG
 
         if debugging or self.failAction:
             # ~ print ("Match", self, "at loc", loc, "(%d, %d)" % (lineno(loc, instring), col(loc, instring)))
@@ -403,7 +405,7 @@ class ParserElement(object):
 
         tokens = self.postParse(instring, loc, tokens)
 
-        retTokens = ParseResults(tokens, self.resultsName, asList=self.saveAsList, modal=self.modalResults)
+        retTokens = ParseResults(tokens, modal=self.modalResults)
         if self.parseAction and (doActions or self.callDuringTry):
             if debugging:
                 try:
@@ -417,8 +419,6 @@ class ParserElement(object):
 
                         if tokens is not None and tokens is not retTokens:
                             retTokens = ParseResults(tokens,
-                                                      self.resultsName,
-                                                      asList=self.saveAsList and isinstance(tokens, (ParseResults, list)),
                                                       modal=self.modalResults)
                 except Exception as err:
                     # ~ print "Exception raised in user parse action:", err
@@ -436,8 +436,6 @@ class ParserElement(object):
 
                     if tokens is not None and tokens is not retTokens:
                         retTokens = ParseResults(tokens,
-                                                  self.resultsName,
-                                                  asList=self.saveAsList and isinstance(tokens, (ParseResults, list)),
                                                   modal=self.modalResults)
         if debugging:
             # ~ print ("Matched", self, "->", retTokens.asList())

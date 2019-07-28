@@ -3,9 +3,8 @@ import warnings
 
 from pyparsing.exceptions import ParseBaseException, ParseException, RecursiveGrammarException
 from pyparsing.parser.base import ParserElement, __diag__
-from pyparsing.parser.results import ParseResults, _ParseResultsWithOffset
-from pyparsing.utils import _MAX_INT, _ustr, basestring
-
+from pyparsing.parser.results import ParseResults
+from pyparsing.utils import _MAX_INT, _ustr
 
 # import later
 Token, Literal, Keyword, Word, CharsNotIn, _PositionToken, StringEnd = [None] * 7
@@ -779,16 +778,16 @@ class Dict(TokenConverter):
             if isinstance(ikey, int):
                 ikey = _ustr(tok[0]).strip()
             if len(tok) == 1:
-                tokenlist[ikey] = _ParseResultsWithOffset("", i)
+                tokenlist[ikey] = ""
             elif len(tok) == 2 and not isinstance(tok[1], ParseResults):
-                tokenlist[ikey] = _ParseResultsWithOffset(tok[1], i)
+                tokenlist[ikey] = tok[1]
             else:
                 dictvalue = tok.copy()  # ParseResults(i)
                 del dictvalue[0]
                 if len(dictvalue) != 1 or (isinstance(dictvalue, ParseResults) and dictvalue.haskeys()):
-                    tokenlist[ikey] = _ParseResultsWithOffset(dictvalue, i)
+                    tokenlist[ikey] = dictvalue
                 else:
-                    tokenlist[ikey] = _ParseResultsWithOffset(dictvalue[0], i)
+                    tokenlist[ikey] = dictvalue[0]
 
         if self.resultsName:
             return [tokenlist]
