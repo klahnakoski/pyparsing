@@ -35,7 +35,9 @@ class TestBasic(TestCase):
     
             # multiple tables
             Select A, B, C from Sys.dual, Table2
-    
+        """)
+
+        runTests(simpleSQL, """            
             # invalid SELECT keyword - should fail
             Xelect A, B, C from Sys.dual
     
@@ -45,7 +47,7 @@ class TestBasic(TestCase):
             # invalid column name - should fail
             Select ^^^ frox Sys.dual
     
-            """)
+            """, failureTests=True)
 
         runTests(pyparsing_common.number, """
             100

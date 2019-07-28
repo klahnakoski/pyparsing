@@ -125,7 +125,7 @@ def runTests(self, tests, parseAll=True, comment='#',
         try:
             # convert newline marks to actual newlines, and strip leading BOM if present
             t = NL.transformString(t.lstrip(BOM))
-            Log.note("begin test")
+            Log.note("begin test on\n{{string|indent}}", string=t)
             result = self.parseString(t, parseAll=parseAll)
         except ParseBaseException as pe:
             if not failureTests:
@@ -137,7 +137,8 @@ def runTests(self, tests, parseAll=True, comment='#',
                 Log.note(' ' * (col(pe.loc, t) - 1) + '^' + fatal)
             else:
                 Log.note(' ' * pe.loc + '^' + fatal)
-            Log.note("FAIL: " + str(pe))
+
+            Log.note("EXPECTED FAIL: " + str(pe))
             result = pe
         except Exception as exc:
             if not failureTests:
