@@ -6,7 +6,7 @@ from pyparsing import ParserElement
 from pyparsing.exceptions import ParseBaseException, ParseFatalException
 from pyparsing.parser.base import quotedString, replaceWith
 from pyparsing.parser.results import ParseResults
-from pyparsing.tokens import Literal
+from pyparsing.parser.tokens import Literal
 from pyparsing.utils import basestring, col, line
 
 

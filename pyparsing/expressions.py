@@ -3,11 +3,11 @@ from operator import itemgetter
 import warnings
 
 from pyparsing.exceptions import ParseBaseException, ParseException, ParseSyntaxException
-from pyparsing.parser.base import ParserElement, __diag__, _PendingSkip
+from pyparsing.parser.base import ParserElement, _PendingSkip, __diag__
 from pyparsing.parser.enhancement import OneOrMore, Optional, SkipTo, Suppress, ZeroOrMore
 from pyparsing.parser.results import ParseResults
 from pyparsing.parser.tokens import Empty
-from pyparsing.utils import Iterable, __compat__, _generatorType, _ustr, basestring
+from pyparsing.utils import Iterable, __compat__, _generatorType, _ustr
 
 
 class ParseExpression(ParserElement):
@@ -198,8 +198,7 @@ class And(ParseExpression):
                 except ParseSyntaxException:
                     raise
                 except ParseBaseException as pe:
-                    pe.__traceback__ = None
-                    raise ParseSyntaxException._from_exception(pe)
+                    raise ParseSyntaxException(pe.pstr, pe.loc, pe.msg, pe.parserElement)
                 except IndexError:
                     raise ParseSyntaxException(instring, len(instring), self.errmsg, self)
             else:
