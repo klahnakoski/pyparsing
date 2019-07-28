@@ -16,24 +16,15 @@ class ParseExpression(ParserElement):
     """
     def __init__(self, exprs, savelist=False):
         super(ParseExpression, self).__init__(savelist)
+
         if isinstance(exprs, _generatorType):
             exprs = list(exprs)
-
-        if isinstance(exprs, basestring):
-            self.exprs = [self._literalStringClass(exprs)]
-        elif isinstance(exprs, ParserElement):
-            self.exprs = [exprs]
-        elif isinstance(exprs, Iterable):
+        elif not isinstance(exprs, ParserElement) and isinstance(exprs, Iterable):
             exprs = list(exprs)
-            # if sequence of strings provided, wrap with Literal
-            if any(isinstance(expr, basestring) for expr in exprs):
-                exprs = (self._literalStringClass(e) if isinstance(e, basestring) else e for e in exprs)
-            self.exprs = list(exprs)
         else:
-            try:
-                self.exprs = list(exprs)
-            except TypeError:
-                self.exprs = [exprs]
+            exprs = [exprs]
+
+        self.exprs = [self.normalize(e) for e in exprs]
         self.callPreparse = False
 
     def append(self, other):
@@ -218,9 +209,7 @@ class And(ParseExpression):
         return loc, resultlist
 
     def __iadd__(self, other):
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        return self.append(other)  # And([self, other])
+        return self.append(self.normalize(other))  # And([self, other])
 
     def checkRecursion(self, parseElementList):
         subRecCheckList = parseElementList[:] + [self]
@@ -331,9 +320,7 @@ class Or(ParseExpression):
 
 
     def __ixor__(self, other):
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        return self.append(other)  # Or([self, other])
+        return self.append(self.normalize(other))  # Or([self, other])
 
     def __str__(self):
         if hasattr(self, "name"):
@@ -417,9 +404,7 @@ class MatchFirst(ParseExpression):
                 raise ParseException(instring, loc, "no defined alternatives to match", self)
 
     def __ior__(self, other):
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        return self.append(other)  # MatchFirst([self, other])
+        return self.append(self.normalize(other))  # MatchFirst([self, other])
 
     def __str__(self):
         if hasattr(self, "name"):

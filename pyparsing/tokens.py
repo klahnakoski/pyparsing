@@ -1058,6 +1058,7 @@ from pyparsing.parser import base, enhancement
 base.Empty = Empty
 base.StringEnd = StringEnd
 base.Literal = Literal
+base.Token = Token
 
 enhancement.Token = Token
 enhancement.Literal = Literal

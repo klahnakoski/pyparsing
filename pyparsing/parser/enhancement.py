@@ -25,12 +25,7 @@ class ParseElementEnhance(ParserElement):
     """
     def __init__(self, expr, savelist=False):
         super(ParseElementEnhance, self).__init__(savelist)
-        if isinstance(expr, basestring):
-            if issubclass(self._literalStringClass, Token):
-                expr = self._literalStringClass(expr)
-            else:
-                expr = self._literalStringClass(Literal(expr))
-        self.expr = expr
+        self.expr = expr = self.normalize(expr)
         self.strRepr = None
         if expr is not None:
             self.mayIndexError = expr.mayIndexError
@@ -256,15 +251,10 @@ class _MultipleMatch(ParseElementEnhance):
     def __init__(self, expr, stopOn=None):
         super(_MultipleMatch, self).__init__(expr)
         self.saveAsList = True
-        ender = stopOn
-        if isinstance(ender, basestring):
-            ender = self._literalStringClass(ender)
-        self.stopOn(ender)
+        self.stopOn(self.normalize(stopOn))
 
     def stopOn(self, ender):
-        if isinstance(ender, basestring):
-            ender = self._literalStringClass(ender)
-        self.not_ender = ~ender if ender is not None else None
+        self.not_ender = ~self.normalize(ender) if ender else None
         return self
 
     def parseImpl(self, instring, loc, doActions=True):
@@ -508,10 +498,7 @@ class SkipTo(ParseElementEnhance):
         self.mayIndexError = False
         self.includeMatch = include
         self.saveAsList = False
-        if isinstance(failOn, basestring):
-            self.failOn = self._literalStringClass(failOn)
-        else:
-            self.failOn = failOn
+        self.failOn = self.normalize(failOn)
         self.errmsg = "No match found for " + _ustr(self.expr)
 
     def parseImpl(self, instring, loc, doActions=True):
@@ -592,9 +579,7 @@ class Forward(ParseElementEnhance):
         super(Forward, self).__init__(other, savelist=False)
 
     def __lshift__(self, other):
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        self.expr = other
+        self.expr = self.normalize(other)
         self.strRepr = None
         self.mayIndexError = self.expr.mayIndexError
         self.mayReturnEmpty = self.expr.mayReturnEmpty

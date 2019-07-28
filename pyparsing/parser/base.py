@@ -10,7 +10,7 @@ from pyparsing.parser.results import ParseResults
 from pyparsing.utils import PY_3, RLock, SimpleNamespace, _MAX_INT, _OrderedDict, _defaultExceptionDebugAction, _defaultStartDebugAction, _defaultSuccessDebugAction, _trim_arity, _ustr, basestring, deque
 
 # import later
-SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith, quotedString, And, MatchFirst, Or, Each, Empty, StringEnd, Literal = [None] * 16
+SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith, quotedString, And, MatchFirst, Or, Each, Empty, StringEnd, Literal, Token = [None] * 17
 
 
 __diag__ = SimpleNamespace()
@@ -37,7 +37,7 @@ __diag__.enable_debug_on_named_expressions = False
 
 
 @contextmanager
-def use_whitespace(chars):
+def default_whitespace(chars):
     r"""
     Overrides the default whitespace chars
 
@@ -54,7 +54,6 @@ def use_whitespace(chars):
     ParserElement.DEFAULT_WHITE_CHARS = chars
     yield
     ParserElement.DEFAULT_WHITE_CHARS = old_value
-
 
 class ParserElement(object):
     """Abstract base level parser element class."""
@@ -75,7 +74,7 @@ class ParserElement(object):
             ParserElement.setDefaultWhitespaceChars(" \t")
             OneOrMore(Word(alphas)).parseString("abc def\nghi jkl")  # -> ['abc', 'def']
         """
-        return use_whitespace(chars)
+        return default_whitespace(chars)
 
     @staticmethod
     def inlineLiteralsUsing(cls):
@@ -121,6 +120,20 @@ class ParserElement(object):
         self.re = None
         self.callPreparse = True # used to avoid redundant calls to preParse
         self.callDuringTry = False
+
+    def normalize(self, expr):
+        if expr is None:
+            return None
+        if isinstance(expr, basestring):
+            if issubclass(self._literalStringClass, Token):
+                return self._literalStringClass(expr)
+            else:
+                return self._literalStringClass(Literal(expr))
+        if not isinstance(expr, ParserElement):
+            warnings.warn("Cannot combine element of type %s with ParserElement" % type(expr),
+                          SyntaxWarning, stacklevel=2)
+            return None
+        return expr
 
     def copy(self):
         """
@@ -859,13 +872,7 @@ class ParserElement(object):
         if other is Ellipsis:
             return _PendingSkip(self)
 
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return And([self, other])
+        return And([self, self.normalize(other)])
 
     def __radd__(self, other):
         """
@@ -874,37 +881,19 @@ class ParserElement(object):
         if other is Ellipsis:
             return SkipTo(self)("_skipped*") + self
 
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return other + self
+        return self.normalize(other) + self
 
     def __sub__(self, other):
         """
         Implementation of - operator, returns :class:`And` with error stop
         """
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return self + And._ErrorStop() + other
+        return self + And._ErrorStop() + self.normalize(other)
 
     def __rsub__(self, other):
         """
         Implementation of - operator when left operand is not a :class:`ParserElement`
         """
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return other - self
+        return self.normalize(other) - self
 
     def __mul__(self, other):
         """
@@ -990,73 +979,37 @@ class ParserElement(object):
         if other is Ellipsis:
             return _PendingSkip(self, must_skip=True)
 
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return MatchFirst([self, other])
+        return MatchFirst([self, self.normalize(other)])
 
     def __ror__(self, other):
         """
         Implementation of | operator when left operand is not a :class:`ParserElement`
         """
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return other | self
+        return self.normalize(other) | self
 
     def __xor__(self, other):
         """
         Implementation of ^ operator - returns :class:`Or`
         """
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return Or([self, other])
+        return Or([self, self.normalize(other)])
 
     def __rxor__(self, other):
         """
         Implementation of ^ operator when left operand is not a :class:`ParserElement`
         """
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return other ^ self
+        return self.normalize(other) ^ self
 
     def __and__(self, other):
         """
         Implementation of & operator - returns :class:`Each`
         """
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return Each([self, other])
+        return Each([self, self.normalize(other)])
 
     def __rand__(self, other):
         """
         Implementation of & operator when left operand is not a :class:`ParserElement`
         """
-        if isinstance(other, basestring):
-            other = self._literalStringClass(other)
-        if not isinstance(other, ParserElement):
-            warnings.warn("Cannot combine element of type %s with ParserElement" % type(other),
-                          SyntaxWarning, stacklevel=2)
-            return None
-        return other & self
+        return self.normalize(other) & self
 
     def __invert__(self):
         """
