@@ -1,6 +1,8 @@
 # encoding: utf-8
 import sys
 
+from mo_logs import Log
+
 from pyparsing import ParserElement
 
 from pyparsing.exceptions import ParseBaseException, ParseFatalException
@@ -106,71 +108,58 @@ def runTests(self, tests, parseAll=True, comment='#',
 
     (Note that this is a raw string literal, you must include the leading 'r'.)
     """
+    error = Log.warning
     if isinstance(tests, basestring):
         tests = list(map(str.strip, tests.rstrip().splitlines()))
     if isinstance(comment, basestring):
         comment = Literal(comment)
-    if file is None:
-        file = sys.stdout
-    print_ = file.write
 
     allResults = []
-    comments = []
-    success = True
     NL = Literal(r'\n').addParseAction(replaceWith('\n')).ignore(quotedString)
     BOM = u'\ufeff'
     for t in tests:
-        if comment is not None and comment.matches(t, False) or comments and not t:
-            comments.append(t)
+        if comment is not None and comment.matches(t, False):
+            Log.note(t)
             continue
         if not t:
             continue
-        out = ['\n'.join(comments), t]
-        comments = []
         try:
             # convert newline marks to actual newlines, and strip leading BOM if present
             t = NL.transformString(t.lstrip(BOM))
+            Log.note("begin test on\n{{string|indent}}", string=t)
             result = self.parseString(t, parseAll=parseAll)
         except ParseBaseException as pe:
-            fatal = "(FATAL)" if isinstance(pe, ParseFatalException) else ""
-            if '\n' in t:
-                out.append(line(pe.loc, t))
-                out.append(' ' * (col(pe.loc, t) - 1) + '^' + fatal)
-            else:
-                out.append(' ' * pe.loc + '^' + fatal)
-            out.append("FAIL: " + str(pe))
-            success = success and failureTests
+            if not failureTests:
+                error("FAIL", cause=pe)
+
             result = pe
         except Exception as exc:
-            out.append("FAIL-EXCEPTION: " + str(exc))
-            success = success and failureTests
+            if not failureTests:
+                error("FAIL-EXCEPTION", cause=exc)
             result = exc
         else:
-            success = success and not failureTests
+            if failureTests:
+                error("EXPECTING FAIL")
+
             if postParse is not None:
                 try:
                     pp_value = postParse(t, result)
                     if pp_value is not None:
                         if isinstance(pp_value, ParseResults):
-                            out.append(pp_value.dump())
+                            Log.note(pp_value.dump())
                         else:
-                            out.append(str(pp_value))
+                            Log.note(str(pp_value))
                     else:
-                        out.append(result.dump())
+                        Log.note(result.dump())
                 except Exception as e:
-                    out.append(result.dump(full=fullDump))
-                    out.append("{0} failed: {1}: {2}".format(postParse.__name__, type(e).__name__, e))
+                    Log.note(result.dump(full=fullDump))
+                    Log.note("{0} failed: {1}: {2}".format(postParse.__name__, type(e).__name__, e))
             else:
-                out.append(result.dump(full=fullDump))
-
-        if printResults:
-            if fullDump:
-                out.append('')
-            print_('\n'.join(out))
+                Log.note(result.dump(full=fullDump))
 
         allResults.append((t, result))
 
-    return success, allResults
+    return True, allResults
 
 
 ParserElement.runTests = runTests

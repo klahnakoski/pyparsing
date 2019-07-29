@@ -4382,6 +4382,7 @@ class TestOneOfKeywordsTest(TestCase):
             # keyword oneOf tests
             a b c
             a a a
+            abc
         """)
         self.assertTrue(success, "failed keyword oneOf matching")
 
@@ -4498,8 +4499,8 @@ class TestUndesirableButCommonPracticesTest(TestCase):
         expr.runTests("""
             123
             456
-            abc
         """)
+        expr.runTests("abc", failureTests=True)
 
 
 class TestMiscellaneousParserTests(TestCase):

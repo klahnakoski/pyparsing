@@ -141,7 +141,7 @@ test07 = """(defun factorial (x)
        (* x (factorial (- x 1)))))
        """
 test51 = """(2:XX "abc" (#03# |YWJj|))"""
-test51error = """(3:XX "abc" (#03# |YWJj|))"""
+fail51 = """(3:XX "abc" (#03# |YWJj|))"""
 
 test52 = """
     (and
@@ -156,3 +156,6 @@ test52 = """
 alltests = [globals()[testname] for testname in sorted(locals()) if testname.startswith("test")]
 
 sexp.runTests(alltests, fullDump=False)
+
+allerror = [globals()[testname] for testname in sorted(locals()) if testname.startswith("fail")]
+sexp.runTests(allerror, failureTests=True)
