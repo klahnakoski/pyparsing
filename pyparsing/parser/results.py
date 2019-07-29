@@ -3,21 +3,17 @@ from collections import Mapping, MutableMapping, namedtuple
 from pprint import pprint
 from weakref import ref as wkref
 
+from mo_logs import Log
+
 from pyparsing.utils import PY_3, _generatorType, _ustr, _xml_escape, basestring
 
 
-ResultPair = namedtuple("Result", ["name", "value"])
+_get = object.__getattribute__;
 
-
-def to_list(value):
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return value[:]
-    elif isinstance(value, _generatorType):
-        return list(value)
-    else:
-        return [value]
+def get_name(tok):
+    if isinstance(tok, ParseResults):
+        return tok.__name
+    return None
 
 
 class ParseResults(object):
@@ -64,39 +60,55 @@ class ParseResults(object):
         - year: 1999
     """
 
+    @staticmethod
+    def new_instance(toklist, name=None, modal=True, isinstance=isinstance):
+        if isinstance(toklist, ParseResults):
+            return toklist
+        elif toklist is None:
+            Log.error("no longer accepted")
+        if isinstance(toklist, list):
+            # if len(toklist) == 0:
+            #     return EMPTY_RESULTS
+            # if len(toklist) == 1 and isinstance(toklist[0], ParseResults):
+            #     return toklist[0]
+            return ParseResults(toklist[:], name, modal, isinstance)
+        elif isinstance(toklist, _generatorType):
+            return ParseResults(list(toklist), name, modal, isinstance)
+        else:
+            return ParseResults([toklist], name, modal, isinstance)
+
+    __slots__ = ["__toklist", "__name", "__parent", "__modal"]
+
     # Performance tuning: we construct a *lot* of these, so keep this
     # constructor as small and fast as possible
-    def __init__(self, toklist=None, modal=True, isinstance=isinstance):
-        toklist = to_list(toklist)
+    def __init__(self, toklist=None, name=None, modal=True, isinstance=isinstance):
+        if isinstance(toklist, ParseResults) or not isinstance(toklist, list):
+            Log.error("no longer accepted")
 
-        if len(toklist) == 0 and isinstance(toklist[0], ParseResults):
-            pass
-
+        self.__toklist = toklist
+        self.__name = name
         self.__parent = None
         self.__modal = modal
-        self.__toklist = [
-            ResultPair(None, t)
-            for t in to_list(toklist)
-        ]
 
     def __getitem__(self, i):
         if isinstance(i, (int, slice)):
             return self.__toklist[i]
         else:
             for tok in self.__toklist:
-                if tok.name == i:
-                    return ParseResults([tok.value])
+                if get_name(tok) == i:
+                    return tok
 
     def __setitem__(self, k, v, isinstance=isinstance):
         if isinstance(k, (int, slice)):
-            self.__toklist[k] = ResultPair(None, v)
+            self.__toklist[k] = v
         else:
-            for i, (n, v) in enumerate(self.__toklist):
-                if n == k:
-                    self.__toklist[i] = ResultPair(n, v)
+            for i, v in enumerate(self.__toklist):
+                if get_name(v)== k:
+                    self.__toklist[i] = v
                     break
             else:
-                self.__toklist.append(ResultPair(k, v))
+                v.__name = k
+                self.__toklist.append(v)
         if isinstance(v, ParseResults):
             v.__parent = wkref(self)
 
@@ -104,10 +116,10 @@ class ParseResults(object):
         if isinstance(i, (int, slice)):
             del self.__toklist[i]
         else:
-            self.__toklist = [r for r in self.__toklist if r.name != i]
+            self.__toklist = [r for r in self.__toklist if get_name(r) != i]
 
     def __contains__(self, k):
-        return any(r.name == k for r in self.__toklist)
+        return any(get_name(r) == k for r in self.__toklist)
 
     def __len__(self):
         return len(self.__toklist)
@@ -123,13 +135,13 @@ class ParseResults(object):
         return reversed(self.__toklist)
 
     def _iterkeys(self):
-        return (r.name for r in self.__toklist if r.name is not None)
+        return (get_name(r) for r in self.__toklist if get_name(r) is not None)
 
     def _itervalues(self):
-        return (r.value for r in self.__toklist if r.name is not None)
+        return (r for r in self.__toklist if get_name(r) is not None)
 
     def _iteritems(self):
-        return ((r.name, r.value) for r in self.__toklist if r.name is not None)
+        return ((get_name(r), r) for r in self.__toklist if get_name(r) is not None)
 
     if PY_3:
         keys = _iterkeys
@@ -166,7 +178,7 @@ class ParseResults(object):
     def haskeys(self):
         """Since keys() returns an iterator, this method is helpful in bypassing
            code that looks for the existence of any defined results names."""
-        return any(r.name for r in self.__toklist)
+        return any(get_name(r) for r in self.__toklist)
 
     def pop(self, *args, **kwargs):
         """
@@ -261,7 +273,7 @@ class ParseResults(object):
                 tokens.insert(0, locn)
             print(OneOrMore(Word(nums)).addParseAction(insert_locn).parseString("0 123 321")) # -> [0, '0', '123', '321']
         """
-        self.__toklist.insert(index, ResultPair(None, insStr))
+        self.__toklist.insert(index, insStr)
 
     def append(self, item):
         """
@@ -276,7 +288,7 @@ class ParseResults(object):
                 tokens.append(sum(map(int, tokens)))
             print(OneOrMore(Word(nums)).addParseAction(append_sum).parseString("0 123 321")) # -> ['0', '123', '321', 444]
         """
-        self.__toklist.append(ResultPair(None, item))
+        self.__toklist.append(item)
 
     def extend(self, itemseq):
         """
@@ -295,7 +307,7 @@ class ParseResults(object):
         if isinstance(itemseq, ParseResults):
             self.__iadd__(itemseq)
         else:
-            self.__toklist.extend(ResultPair(None, r) for r in itemseq)
+            self.__toklist.extend(itemseq)
 
     def clear(self):
         """
@@ -330,11 +342,14 @@ class ParseResults(object):
         return repr(self.__toklist)
 
     def __str__(self):
-        return '[' + ', '.join(_ustr(i) if isinstance(i, ParseResults) else repr(i) for n, i in self.__toklist) + ']'
+        if len(self.__toklist) == 1:
+            return str(self.__toklist[0])
+
+        return '[' + ', '.join(_ustr(v) if isinstance(v, ParseResults) else repr(v) for n, v in self.__toklist) + ']'
 
     def _asStringList(self, sep=''):
         out = []
-        for name, item in self.__toklist:
+        for item in self.__toklist:
             if out and sep:
                 out.append(sep)
             if isinstance(item, ParseResults):
@@ -359,7 +374,7 @@ class ParseResults(object):
             print(type(result_list), result_list) # -> <class 'list'> ['sldkj', 'lsdkj', 'sldkj']
         """
         try:
-            return [res.asList() if isinstance(res, ParseResults) else res for name, res in self.__toklist]
+            return [res.asList() if isinstance(res, ParseResults) else res for res in self.__toklist]
         except Exception as e:
             raise e
 
@@ -403,7 +418,7 @@ class ParseResults(object):
         """
         Returns a new copy of a :class:`ParseResults` object.
         """
-        ret = ParseResults(self.__toklist)
+        ret = ParseResults.new_instance(self.__toklist, self.resultsName)
         ret.__parent = self.__parent
         ret.__name = self.__name
         return ret
@@ -414,7 +429,7 @@ class ParseResults(object):
         """
         nl = "\n"
         out = []
-        namedItems = dict((i, r.name) for i, r in enumerate(self.__toklist) if r.name)
+        namedItems = dict((i, get_name(r)) for i, r in enumerate(self.__toklist) if get_name(r))
         nextLevelIndent = indent + "  "
 
         # collapse out indents if formatting is not desired
@@ -427,8 +442,8 @@ class ParseResults(object):
         if doctag is not None:
             selfTag = doctag
         else:
-            if self.__name:
-                selfTag = self.__name
+            if get_name(self):
+                selfTag = get_name(self)
 
         if not selfTag:
             if namedItemsOnly:
@@ -499,8 +514,8 @@ class ParseResults(object):
             ssn : 111-22-3333
             house_number : 221B
         """
-        if self.__name:
-            return self.__name
+        if get_name(self):
+            return get_name(self)
         elif self.__parent:
             par = self.__parent()
             if par:
@@ -508,7 +523,7 @@ class ParseResults(object):
             else:
                 return None
         elif len(self.__toklist) == 1:
-            return self.__toklist[0].name
+            return self.__toklist[0].__name
         else:
             return None
 
@@ -609,7 +624,7 @@ class ParseResults(object):
         return (self.__toklist,
                 (
                  self.__parent is not None and self.__parent() or None,
-                 self.__name))
+                 get_name(self)))
 
     def __setstate__(self, state):
         self.__toklist = state[0]
@@ -652,6 +667,9 @@ class ParseResults(object):
         if name is not None:
             ret = cls([ret], name=name)
         return ret
+
+
+EMPTY_RESULTS = ParseResults([])
 
 MutableMapping.register(ParseResults)
 

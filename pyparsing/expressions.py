@@ -547,7 +547,7 @@ class Each(ParseExpression):
             loc, results = e._parse(instring, loc, doActions)
             resultlist.append(results)
 
-        finalResults = sum(resultlist, ParseResults([]))
+        finalResults = sum(resultlist, ParseResults.new_instance([], self.resultsName))
         return loc, finalResults
 
     def __str__(self):

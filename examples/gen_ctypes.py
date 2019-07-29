@@ -58,7 +58,7 @@ vartype = (Optional(const) +
 def normalizetype(t):
     if isinstance(t, ParseResults):
         return ' '.join(t)
-        #~ ret = ParseResults([' '.join(t)])
+        #~ ret = ParseResults.new_instance([' '.join(t)])
         #~ return ret
 
 vartype.setParseAction(normalizetype)

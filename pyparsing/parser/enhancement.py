@@ -415,7 +415,7 @@ class Optional(ParseElementEnhance):
         except (ParseException, IndexError):
             if self.defaultValue is not self.__optionalNotMatched:
                 if self.expr.resultsName:
-                    tokens = ParseResults([self.defaultValue])
+                    tokens = ParseResults.new_instance([self.defaultValue], self.resultsName)
                     tokens[self.expr.resultsName] = self.defaultValue
                 else:
                     tokens = [self.defaultValue]
@@ -539,7 +539,7 @@ class SkipTo(ParseElementEnhance):
         # build up return values
         loc = tmploc
         skiptext = instring[startloc:loc]
-        skipresult = ParseResults(skiptext)
+        skipresult = ParseResults.new_instance(skiptext, self.resultsName)
 
         if self.includeMatch:
             loc, mat = expr_parse(instring, loc, doActions, callPreParse=False)
@@ -698,7 +698,7 @@ class Combine(TokenConverter):
     def postParse(self, instring, loc, tokenlist):
         retToks = tokenlist.copy()
         del retToks[:]
-        retToks += ParseResults(["".join(tokenlist._asStringList(self.joinString))], modal=self.modalResults)
+        retToks += ParseResults.new_instance(["".join(tokenlist._asStringList(self.joinString))], self.resultsName, modal=self.modalResults)
 
         if self.resultsName and retToks.haskeys():
             return [retToks]

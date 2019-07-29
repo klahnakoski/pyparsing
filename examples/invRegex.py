@@ -51,7 +51,7 @@ class DotEmitter(object):
 
 class GroupEmitter(object):
     def __init__(self,exprs):
-        self.exprs = ParseResults(exprs)
+        self.exprs = ParseResults.new_instance(exprs)
     def makeGenerator(self):
         def groupGen():
             def recurseList(elist):

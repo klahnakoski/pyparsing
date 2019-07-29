@@ -300,7 +300,7 @@ class TestGroups(PyparsingExpressionTestCase):
 
 
 class TestParseAction(PyparsingExpressionTestCase):
-    def test_(self):
+    def test_parsing_real_numbers_use_parse_action_to_convert_to_float_at_parse_time(self):
         self.runTest(
             desc="Parsing real numbers - use parse action to convert to float at parse time",
             expr=pp.Combine(pp.Word(pp.nums) + '.' + pp.Word(pp.nums)).addParseAction(lambda t: float(t[0]))[...],
