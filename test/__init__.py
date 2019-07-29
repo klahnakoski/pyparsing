@@ -108,6 +108,7 @@ def runTests(self, tests, parseAll=True, comment='#',
 
     (Note that this is a raw string literal, you must include the leading 'r'.)
     """
+    error = Log.warning
     if isinstance(tests, basestring):
         tests = list(map(str.strip, tests.rstrip().splitlines()))
     if isinstance(comment, basestring):
@@ -129,24 +130,16 @@ def runTests(self, tests, parseAll=True, comment='#',
             result = self.parseString(t, parseAll=parseAll)
         except ParseBaseException as pe:
             if not failureTests:
-                Log.error("FAIL", cause = pe)
+                error("FAIL", cause=pe)
 
-            fatal = "(FATAL)" if isinstance(pe, ParseFatalException) else ""
-            if '\n' in t:
-                Log.note(line(pe.loc, t))
-                Log.note(' ' * (col(pe.loc, t) - 1) + '^' + fatal)
-            else:
-                Log.note(' ' * pe.loc + '^' + fatal)
-
-            Log.note("EXPECTED FAIL: " + str(pe))
             result = pe
         except Exception as exc:
             if not failureTests:
-                Log.error("FAIL-EXCEPTION", cause=exc)
+                error("FAIL-EXCEPTION", cause=exc)
             result = exc
         else:
             if failureTests:
-                Log.error("EXPECTING FAIL")
+                error("EXPECTING FAIL")
 
             if postParse is not None:
                 try:
@@ -164,7 +157,7 @@ def runTests(self, tests, parseAll=True, comment='#',
             else:
                 Log.note(result.dump(full=fullDump))
 
-        allResults.append((True, result))
+        allResults.append((t, result))
 
     return True, allResults
 

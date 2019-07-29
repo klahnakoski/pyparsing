@@ -241,13 +241,13 @@ def _xml_escape(data):
     return data
 
 def _defaultStartDebugAction(instring, loc, expr):
-    Log.note("Match " + _ustr(expr) + " at loc " + _ustr(loc) + "(%d,%d)" % (lineno(loc, instring), col(loc, instring)))
+    print("Match " + _ustr(expr) + " at loc " + _ustr(loc) + "(%d,%d)" % (lineno(loc, instring), col(loc, instring)))
 
 def _defaultSuccessDebugAction(instring, startloc, endloc, expr, toks):
-    Log.note("Matched " + _ustr(expr) + " -> " + str(toks.asList()))
+    print("Matched " + _ustr(expr) + " -> " + str(toks.asList()))
 
 def _defaultExceptionDebugAction(instring, loc, expr, exc):
-    Log.note("Exception raised:" + _ustr(exc))
+    print("Exception raised:" + _ustr(exc))
 
 def nullDebugAction(*args):
     """'Do-nothing' debug action, to suppress debugging output during parsing."""
