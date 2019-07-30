@@ -15,6 +15,11 @@ def get_name(tok):
         return tok.__name
     return None
 
+def get_tokens(tok):
+    if isinstance(tok, ParseResults):
+        return _get(tok, "_ParseResults__toklist")
+    return None
+
 
 class ParseResults(object):
     """Structured parse results, to provide multiple means of access to
@@ -63,6 +68,7 @@ class ParseResults(object):
     @staticmethod
     def new_instance(toklist, name=None, modal=True, isinstance=isinstance):
         if isinstance(toklist, ParseResults):
+            toklist.__name = name
             return toklist
         elif toklist is None:
             Log.error("no longer accepted")
@@ -92,56 +98,56 @@ class ParseResults(object):
 
     def __getitem__(self, i):
         if isinstance(i, (int, slice)):
-            return self.__toklist[i]
+            return get_tokens(self)[i]
         else:
-            for tok in self.__toklist:
+            for tok in get_tokens(self):
                 if get_name(tok) == i:
                     return tok
 
     def __setitem__(self, k, v, isinstance=isinstance):
         if isinstance(k, (int, slice)):
-            self.__toklist[k] = v
+            get_tokens(self)[k] = v
         else:
-            for i, v in enumerate(self.__toklist):
+            for i, v in enumerate(get_tokens(self)):
                 if get_name(v)== k:
-                    self.__toklist[i] = v
+                    get_tokens(self)[i] = v
                     break
             else:
                 v.__name = k
-                self.__toklist.append(v)
+                get_tokens(self).append(v)
         if isinstance(v, ParseResults):
             v.__parent = wkref(self)
 
     def __delitem__(self, i):
         if isinstance(i, (int, slice)):
-            del self.__toklist[i]
+            del get_tokens(self)[i]
         else:
-            self.__toklist = [r for r in self.__toklist if get_name(r) != i]
+            self.__toklist = [r for r in get_tokens(self) if get_name(r) != i]
 
     def __contains__(self, k):
-        return any(get_name(r) == k for r in self.__toklist)
+        return any(get_name(r) == k for r in get_tokens(self))
 
     def __len__(self):
-        return len(self.__toklist)
+        return len(get_tokens(self))
 
     def __bool__(self):
-        return (not not self.__toklist)
+        return (not not get_tokens(self))
     __nonzero__ = __bool__
 
     def __iter__(self):
-        return iter(self.__toklist)
+        return iter(get_tokens(self))
 
     def __reversed__(self):
-        return reversed(self.__toklist)
+        return reversed(get_tokens(self))
 
     def _iterkeys(self):
-        return (get_name(r) for r in self.__toklist if get_name(r) is not None)
+        return (get_name(r) for r in get_tokens(self) if get_name(r) is not None)
 
     def _itervalues(self):
-        return (r for r in self.__toklist if get_name(r) is not None)
+        return (r for r in get_tokens(self) if get_name(r) is not None)
 
     def _iteritems(self):
-        return ((get_name(r), r) for r in self.__toklist if get_name(r) is not None)
+        return ((get_name(r), r) for r in get_tokens(self) if get_name(r) is not None)
 
     if PY_3:
         keys = _iterkeys
@@ -178,7 +184,7 @@ class ParseResults(object):
     def haskeys(self):
         """Since keys() returns an iterator, this method is helpful in bypassing
            code that looks for the existence of any defined results names."""
-        return any(get_name(r) for r in self.__toklist)
+        return any(get_name(r) for r in get_tokens(self))
 
     def pop(self, *args, **kwargs):
         """
@@ -273,7 +279,7 @@ class ParseResults(object):
                 tokens.insert(0, locn)
             print(OneOrMore(Word(nums)).addParseAction(insert_locn).parseString("0 123 321")) # -> [0, '0', '123', '321']
         """
-        self.__toklist.insert(index, insStr)
+        get_tokens(self).insert(index, insStr)
 
     def append(self, item):
         """
@@ -288,7 +294,7 @@ class ParseResults(object):
                 tokens.append(sum(map(int, tokens)))
             print(OneOrMore(Word(nums)).addParseAction(append_sum).parseString("0 123 321")) # -> ['0', '123', '321', 444]
         """
-        self.__toklist.append(item)
+        get_tokens(self).append(item)
 
     def extend(self, itemseq):
         """
@@ -307,13 +313,13 @@ class ParseResults(object):
         if isinstance(itemseq, ParseResults):
             self.__iadd__(itemseq)
         else:
-            self.__toklist.extend(itemseq)
+            get_tokens(self).extend(itemseq)
 
     def clear(self):
         """
         Clear all elements and results names.
         """
-        del self.__toklist[:]
+        del get_tokens(self)[:]
 
     def __getattr__(self, name):
         try:
@@ -327,7 +333,10 @@ class ParseResults(object):
         return ret
 
     def __iadd__(self, other):
-        self.__toklist += other.__toklist
+        # if len(other) == 1 and not isinstance(other[0], ParseResults):
+        #     get_tokens(self).append(other[0])
+        # self.__toklist = get_tokens(self) + get_tokens(other)
+        get_tokens(self).append(other)
         return self
 
     def __radd__(self, other):
@@ -339,17 +348,17 @@ class ParseResults(object):
             return other + self
 
     def __repr__(self):
-        return repr(self.__toklist)
+        return repr(get_tokens(self))
 
     def __str__(self):
-        if len(self.__toklist) == 1:
-            return str(self.__toklist[0])
+        # if len(get_tokens(self)) == 1:
+        #     return str(get_tokens(self)[0])
 
-        return '[' + ', '.join(_ustr(v) if isinstance(v, ParseResults) else repr(v) for n, v in self.__toklist) + ']'
+        return '[' + ', '.join(_ustr(v) if isinstance(v, ParseResults) else repr(v) for v in get_tokens(self)) + ']'
 
     def _asStringList(self, sep=''):
         out = []
-        for item in self.__toklist:
+        for item in get_tokens(self):
             if out and sep:
                 out.append(sep)
             if isinstance(item, ParseResults):
@@ -374,7 +383,7 @@ class ParseResults(object):
             print(type(result_list), result_list) # -> <class 'list'> ['sldkj', 'lsdkj', 'sldkj']
         """
         try:
-            return [res.asList() if isinstance(res, ParseResults) else res for res in self.__toklist]
+            return [res.asList() if isinstance(res, ParseResults) else res for res in get_tokens(self)]
         except Exception as e:
             raise e
 
@@ -418,7 +427,7 @@ class ParseResults(object):
         """
         Returns a new copy of a :class:`ParseResults` object.
         """
-        ret = ParseResults.new_instance(self.__toklist, self.resultsName)
+        ret = ParseResults.new_instance(get_tokens(self), self.resultsName)
         ret.__parent = self.__parent
         ret.__name = self.__name
         return ret
@@ -429,7 +438,7 @@ class ParseResults(object):
         """
         nl = "\n"
         out = []
-        namedItems = dict((i, get_name(r)) for i, r in enumerate(self.__toklist) if get_name(r))
+        namedItems = dict((i, get_name(r)) for i, r in enumerate(get_tokens(self)) if get_name(r))
         nextLevelIndent = indent + "  "
 
         # collapse out indents if formatting is not desired
@@ -453,7 +462,7 @@ class ParseResults(object):
 
         out += [nl, indent, "<", selfTag, ">"]
 
-        for i, (name, res) in enumerate(self.__toklist):
+        for i, (name, res) in enumerate(get_tokens(self)):
             if isinstance(res, ParseResults):
                 if i in namedItems:
                     out += [res.asXML(namedItems[i],
@@ -484,7 +493,7 @@ class ParseResults(object):
         return "".join(out)
 
     def __lookup(self, sub):
-        for name, value in self.__toklist:
+        for name, value in get_tokens(self):
             if sub is value:
                 return name
         return None
@@ -522,8 +531,8 @@ class ParseResults(object):
                 return par.__lookup(self)
             else:
                 return None
-        elif len(self.__toklist) == 1:
-            return self.__toklist[0].__name
+        elif len(get_tokens(self)) == 1:
+            return get_tokens(self)[0].__name
         else:
             return None
 
@@ -621,7 +630,7 @@ class ParseResults(object):
 
     # add support for pickle protocol
     def __getstate__(self):
-        return (self.__toklist,
+        return (get_tokens(self),
                 (
                  self.__parent is not None and self.__parent() or None,
                  get_name(self)))
@@ -635,7 +644,7 @@ class ParseResults(object):
             self.__parent = None
 
     def __getnewargs__(self):
-        return self.__toklist, self.__name, self.__asList, self.__modal
+        return get_tokens(self), get_name(self), self.__asList, self.__modal
 
     def __dir__(self):
         return dir(type(self)) + list(self.keys())
