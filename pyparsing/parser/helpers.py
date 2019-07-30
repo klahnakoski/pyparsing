@@ -901,7 +901,7 @@ def nestedExpr(opener="(", closer=")", content=None, ignoreExpr=quotedString.cop
     if ignoreExpr is not None:
         ret <<= Group(Suppress(opener) + ZeroOrMore(ignoreExpr | ret | content) + Suppress(closer))
     else:
-        ret <<= Group(Suppress(opener) + ZeroOrMore(ret | content)  + Suppress(closer))
+        ret <<= Group(Suppress(opener) + ZeroOrMore(ret | content) + Suppress(closer))
     ret.setName('nested %s%s expression' % (opener, closer))
     return ret
 

@@ -203,7 +203,7 @@ class And(ParseExpression):
                     raise ParseSyntaxException(instring, len(instring), self.errmsg, self)
             else:
                 loc, exprtokens = e._parse(instring, loc, doActions)
-            if exprtokens or exprtokens.haskeys():
+            if exprtokens:
                 resultlist += exprtokens
         return loc, resultlist
 
@@ -547,7 +547,7 @@ class Each(ParseExpression):
             loc, results = e._parse(instring, loc, doActions)
             resultlist.append(results)
 
-        finalResults = sum(resultlist, ParseResults.new_instance([], self.resultsName))
+        finalResults = sum(resultlist, ParseResults.new_instance(self, []))
         return loc, finalResults
 
     def __str__(self):

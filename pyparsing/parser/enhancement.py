@@ -1,6 +1,8 @@
 # encoding: utf-8
 import warnings
 
+from mo_logs import Log
+
 from pyparsing.exceptions import ParseBaseException, ParseException, RecursiveGrammarException
 from pyparsing.parser.base import ParserElement, __diag__
 from pyparsing.parser.results import ParseResults
@@ -9,6 +11,7 @@ from pyparsing.utils import _MAX_INT, _ustr
 # import later
 Token, Literal, Keyword, Word, CharsNotIn, _PositionToken, StringEnd = [None] * 7
 
+_get = object.__getattribute__
 
 class _NullToken(object):
     def __bool__(self):
@@ -278,7 +281,7 @@ class _MultipleMatch(ParseElementEnhance):
                 else:
                     preloc = loc
                 loc, tmptokens = self_expr_parse(instring, preloc, doActions)
-                if tmptokens or tmptokens.haskeys():
+                if tmptokens:
                     tokens += tmptokens
         except (ParseException, IndexError):
             pass
@@ -415,7 +418,7 @@ class Optional(ParseElementEnhance):
         except (ParseException, IndexError):
             if self.defaultValue is not self.__optionalNotMatched:
                 if self.expr.resultsName:
-                    tokens = ParseResults.new_instance([self.defaultValue], self.resultsName)
+                    tokens = ParseResults.new_instance(self, [self.defaultValue])
                     tokens[self.expr.resultsName] = self.defaultValue
                 else:
                     tokens = [self.defaultValue]
@@ -539,7 +542,7 @@ class SkipTo(ParseElementEnhance):
         # build up return values
         loc = tmploc
         skiptext = instring[startloc:loc]
-        skipresult = ParseResults.new_instance(skiptext, self.resultsName)
+        skipresult = ParseResults.new_instance(self, skiptext)
 
         if self.includeMatch:
             loc, mat = expr_parse(instring, loc, doActions, callPreParse=False)
@@ -696,9 +699,7 @@ class Combine(TokenConverter):
         return self
 
     def postParse(self, instring, loc, tokenlist):
-        retToks = tokenlist.copy()
-        del retToks[:]
-        retToks += ParseResults.new_instance(["".join(tokenlist._asStringList(self.joinString))], self.resultsName, modal=self.modalResults)
+        retToks = ParseResults.new_instance(self, "".join(tokenlist._asStringList(self.joinString)))
 
         if self.resultsName and retToks.haskeys():
             return [retToks]
@@ -725,7 +726,7 @@ class Group(TokenConverter):
         self.saveAsList = True
 
     def postParse(self, instring, loc, tokenlist):
-        return [tokenlist]
+        return ParseResults(self, [tokenlist])
 
 class Dict(TokenConverter):
     """Converter to return a repetitive expression as a list, but also

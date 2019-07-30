@@ -1,5 +1,5 @@
 # encoding: utf-8
-from collections import Mapping, MutableMapping, namedtuple
+from collections import Mapping, MutableMapping
 from pprint import pprint
 from weakref import ref as wkref
 
@@ -7,12 +7,11 @@ from mo_logs import Log
 
 from pyparsing.utils import PY_3, _generatorType, _ustr, _xml_escape, basestring
 
-
 _get = object.__getattribute__;
 
 def get_name(tok):
     if isinstance(tok, ParseResults):
-        return tok.__name
+        return tok.type_for_result.resultsName
     return None
 
 def get_tokens(tok):
@@ -65,36 +64,39 @@ class ParseResults(object):
         - year: 1999
     """
 
-    @staticmethod
-    def new_instance(toklist, name=None, modal=True, isinstance=isinstance):
-        if isinstance(toklist, ParseResults):
-            toklist.__name = name
+    @classmethod
+    def new_instance(cls, type, toklist, isinstance=isinstance):
+        if not toklist:
+            return ParseResults(type, [], isinstance)
+        elif isinstance(toklist, ParseResults):
             return toklist
         elif toklist is None:
             Log.error("no longer accepted")
-        if isinstance(toklist, list):
-            # if len(toklist) == 0:
-            #     return EMPTY_RESULTS
-            # if len(toklist) == 1 and isinstance(toklist[0], ParseResults):
-            #     return toklist[0]
-            return ParseResults(toklist[:], name, modal, isinstance)
+        elif isinstance(toklist, list):
+            if len(toklist) != 1:
+                Log.error("do not know how to handle")
+            return toklist[0]
         elif isinstance(toklist, _generatorType):
-            return ParseResults(list(toklist), name, modal, isinstance)
+            return ParseResults(type, list(toklist), isinstance)
         else:
-            return ParseResults([toklist], name, modal, isinstance)
+            return ParseResults(type, [toklist], isinstance)
 
-    __slots__ = ["__toklist", "__name", "__parent", "__modal"]
+    __slots__ = ["__toklist", "type_for_result", "__parent"]
+
+    @property
+    def name_for_result(self):
+        return get_name(self)
+
 
     # Performance tuning: we construct a *lot* of these, so keep this
     # constructor as small and fast as possible
-    def __init__(self, toklist=None, name=None, modal=True, isinstance=isinstance):
+    def __init__(self, type, toklist=None, name=None, isinstance=isinstance):
         if isinstance(toklist, ParseResults) or not isinstance(toklist, list):
             Log.error("no longer accepted")
 
         self.__toklist = toklist
-        self.__name = name
+        self.type_for_result = type
         self.__parent = None
-        self.__modal = modal
 
     def __getitem__(self, i):
         if isinstance(i, (int, slice)):
@@ -109,12 +111,11 @@ class ParseResults(object):
             get_tokens(self)[k] = v
         else:
             for i, v in enumerate(get_tokens(self)):
-                if get_name(v)== k:
+                if get_name(v) == k:
                     get_tokens(self)[i] = v
                     break
             else:
-                v.__name = k
-                get_tokens(self).append(v)
+                Log.error("not expected")
         if isinstance(v, ParseResults):
             v.__parent = wkref(self)
 
@@ -147,7 +148,7 @@ class ParseResults(object):
         return (r for r in get_tokens(self) if get_name(r) is not None)
 
     def _iteritems(self):
-        return ((get_name(r), r) for r in get_tokens(self) if get_name(r) is not None)
+        return ((n, r) for r in get_tokens(self) for n in [get_name(r)] if n is not None)
 
     if PY_3:
         keys = _iterkeys
@@ -333,10 +334,17 @@ class ParseResults(object):
         return ret
 
     def __iadd__(self, other):
-        # if len(other) == 1 and not isinstance(other[0], ParseResults):
-        #     get_tokens(self).append(other[0])
-        # self.__toklist = get_tokens(self) + get_tokens(other)
-        get_tokens(self).append(other)
+        # safe to collapse
+        if isinstance(other, list):
+            Log.error("not expected")
+        elif get_name(self):
+            Log.error("not expected")
+        elif get_name(other):
+            get_tokens(self).append(other)
+        elif isinstance(other, ParseResults):
+            get_tokens(self).extend(other)
+        else:
+            get_tokens(self).append(other)
         return self
 
     def __radd__(self, other):
@@ -427,9 +435,8 @@ class ParseResults(object):
         """
         Returns a new copy of a :class:`ParseResults` object.
         """
-        ret = ParseResults.new_instance(get_tokens(self), self.resultsName)
+        ret = ParseResults(get_tokens(self)[:], get_name(self))
         ret.__parent = self.__parent
-        ret.__name = self.__name
         return ret
 
     def asXML(self, doctag=None, namedItemsOnly=False, indent="", formatted=True):
@@ -532,7 +539,7 @@ class ParseResults(object):
             else:
                 return None
         elif len(get_tokens(self)) == 1:
-            return get_tokens(self)[0].__name
+            return get_name(get_tokens(self)[0])
         else:
             return None
 
@@ -633,18 +640,18 @@ class ParseResults(object):
         return (get_tokens(self),
                 (
                  self.__parent is not None and self.__parent() or None,
+                 self.type_for_result,
                  get_name(self)))
 
     def __setstate__(self, state):
-        self.__toklist = state[0]
-        par, self.__name = state[1]
+        self.__toklist, (par, self.type_for_result) = state
         if par is not None:
             self.__parent = wkref(par)
         else:
             self.__parent = None
 
     def __getnewargs__(self):
-        return get_tokens(self), get_name(self), self.__asList, self.__modal
+        return self.type_for_result, get_tokens(self), get_name(self), self.__asList
 
     def __dir__(self):
         return dir(type(self)) + list(self.keys())
@@ -677,8 +684,6 @@ class ParseResults(object):
             ret = cls([ret], name=name)
         return ret
 
-
-EMPTY_RESULTS = ParseResults([])
 
 MutableMapping.register(ParseResults)
 

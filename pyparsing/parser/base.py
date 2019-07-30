@@ -407,7 +407,7 @@ class ParserElement(object):
 
         tokens = self.postParse(instring, loc, tokens)
 
-        retTokens = ParseResults.new_instance(tokens, self.resultsName, modal=self.modalResults)
+        retTokens = ParseResults.new_instance(self, tokens)
         if self.parseAction and (doActions or self.callDuringTry):
             if debugging:
                 try:
@@ -420,8 +420,7 @@ class ParserElement(object):
                             raise exc
 
                         if tokens is not None and tokens is not retTokens:
-                            retTokens = ParseResults.new_instance(tokens, self.resultsName,
-                                                      modal=self.modalResults)
+                            retTokens = ParseResults.new_instance(self, tokens)
                 except Exception as err:
                     # ~ print "Exception raised in user parse action:", err
                     if self.debugActions[FAIL]:
@@ -437,8 +436,7 @@ class ParserElement(object):
                         raise exc
 
                     if tokens is not None and tokens is not retTokens:
-                        retTokens = ParseResults.new_instance(tokens, self.resultsName,
-                                                  modal=self.modalResults)
+                        retTokens = ParseResults.new_instance(self, tokens)
         if debugging:
             # ~ print ("Matched", self, "->", retTokens.asList())
             if self.debugActions[MATCH]:
@@ -809,7 +807,7 @@ class ParserElement(object):
             ['More', 'Iron', 'Lead', 'Gold', 'I', 'Electricity']
         """
         try:
-            return ParseResults.new_instance([t for t, s, e in self.scanString(instring, maxMatches)], self.resultsName)
+            return ParseResults.new_instance(self, [t for t, s, e in self.scanString(instring, maxMatches)])
         except ParseBaseException as exc:
             if ParserElement.verbose_stacktrace:
                 raise

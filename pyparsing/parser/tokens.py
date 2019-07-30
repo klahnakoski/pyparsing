@@ -274,7 +274,7 @@ class CloseMatch(Token):
                         break
             else:
                 loc = match_stringloc + 1
-                results = ParseResults.new_instance([instring[start:loc]], self.resultsName)
+                results = ParseResults.new_instance(self, [instring[start:loc]])
                 results['original'] = match_string
                 results['mismatches'] = mismatches
                 return loc, results
@@ -531,7 +531,7 @@ class Regex(Token):
             raise ParseException(instring, loc, self.errmsg, self)
 
         loc = result.end()
-        ret = ParseResults.new_instance(result.group(), self.resultsName)
+        ret = ParseResults.new_instance(self, result.group())
         d = result.groupdict()
         if d:
             for k, v in d.items():
