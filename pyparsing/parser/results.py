@@ -404,10 +404,16 @@ class ParseResults(object):
             result_list = result.asList()
             print(type(result_list), result_list) # -> <class 'list'> ['sldkj', 'lsdkj', 'sldkj']
         """
-        try:
-            return [res.asList() if isinstance(res, ParseResults) else res for res in get_tokens(self)]
-        except Exception as e:
-            raise e
+        def more(res):
+            if isinstance(res, ParseResults):
+                if isinstance(res.type_for_result, Group):
+                    return [[mm for r in get_tokens(res) for mm in more(r)]]
+                else:
+                    return [mm for r in get_tokens(res) for mm in more(r)]
+            else:
+                return [res]
+
+        return more(self)
 
     def asDict(self):
         """
@@ -429,21 +435,23 @@ class ParseResults(object):
             print(json.dumps(result)) # -> Exception: TypeError: ... is not JSON serializable
             print(json.dumps(result.asDict())) # -> {"month": "31", "day": "1999", "year": "12"}
         """
-        if PY_3:
-            item_fn = self.items
-        else:
-            item_fn = self.iteritems
-
         def toItem(obj):
             if isinstance(obj, ParseResults):
                 if obj.haskeys():
-                    return obj.asDict()
+                    return [obj.asDict()]
+                elif isinstance(obj.type_for_result, Group):
+                    return [[vv for v in get_tokens(obj) for vv in toItem(v)]]
                 else:
-                    return [toItem(v) for v in obj]
+                    return [vv for v in get_tokens(obj) for vv in toItem(v)]
             else:
-                return obj
+                return [obj]
 
-        return dict((k, toItem(v)) for k, v in item_fn())
+        name = get_name(self)
+        if name:
+            value = toItem(self)
+            return {name: value if len(value) > 1 else value[0]}
+        else:
+            return dict((k, toItem(v)[0]) for k, v in self)
 
     def copy(self):
         """

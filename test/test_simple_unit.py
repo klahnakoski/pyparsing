@@ -43,9 +43,9 @@ class PyparsingExpressionTestCase(unittest.TestCase):
                 print(result.dump())
                 # compare results against given list and/or dict
                 if test_spec.expected_list is not None:
-                    self.assertEqual(result.asList(), test_spec.expected_list)
+                    self.assertEqual(test_spec.expected_list, result.asList())
                 if test_spec.expected_dict is not None:
-                    self.assertEqual(result.asDict(), test_spec.expected_dict)
+                    self.assertEqual(test_spec.expected_dict, result.asDict())
             elif test_spec.parse_fn == 'transformString':
                 print(result)
                 # compare results against given list and/or dict
