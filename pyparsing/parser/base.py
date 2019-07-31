@@ -2,8 +2,11 @@
 from contextlib import contextmanager
 import copy
 from copy import copy
+from datetime import datetime
 import types
 import warnings
+
+from mo_logs import Log
 
 from pyparsing.exceptions import ParseBaseException, ParseException, ParseFatalException, conditionAsParseAction
 from pyparsing.parser.results import ParseResults
@@ -354,7 +357,7 @@ class ParserElement(object):
         return loc
 
     def parseImpl(self, instring, loc, doActions=True):
-        return loc, []
+        return loc, ParseResults(self, [])
 
     def postParse(self, instring, loc, tokenlist):
         return tokenlist
@@ -402,9 +405,22 @@ class ParserElement(object):
             else:
                 loc, tokens = self.parseImpl(instring, preloc, doActions)
 
+        if not isinstance(tokens, ParseResults):
+            Log.error("expecting ParseResult")
+
         tokens = self.postParse(instring, loc, tokens)
 
-        retTokens = ParseResults.new_instance(self, tokens)
+        if not isinstance(tokens, ParseResults):
+            Log.error("expecting ParseResult")
+        if self.__class__.__name__=="Forward":
+            if self.expr is not tokens.type_for_result:
+                Log.error("expecting correct type to com from self")
+            else:
+                pass  # OK
+        elif tokens.type_for_result is not self:
+            Log.error("expecting correct type to com from self")
+
+        retTokens = tokens
         if self.parseAction and (doActions or self.callDuringTry):
             if debugging:
                 try:
@@ -427,13 +443,23 @@ class ParserElement(object):
                 for fn in self.parseAction:
                     try:
                         tokens = fn(instring, tokensStart, retTokens)
+                        if isinstance(tokens, list):
+                            tokens = ParseResults(self, tokens)
+                        elif isinstance(tokens, ParseResults):
+                            pass
+                        elif isinstance(tokens, (basestring, int, float, datetime)):
+                            tokens = ParseResults(self, [tokens])
+                        elif tokens is None:
+                            ParseResults(self, [])
+                        else:
+                            Log.error("not understood")
                     except IndexError as parse_action_exc:
                         exc = ParseException("exception raised in parse action")
                         exc.__cause__ = parse_action_exc
                         raise exc
 
                     if tokens is not None and tokens is not retTokens:
-                        retTokens = ParseResults.new_instance(self, tokens)
+                        retTokens = tokens
         if debugging:
             # ~ print ("Matched", self, "->", retTokens.asList())
             if self.debugActions[MATCH]:

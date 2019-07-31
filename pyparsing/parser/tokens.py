@@ -3,6 +3,8 @@ import re
 import sre_constants
 import warnings
 
+from invoke.parser import ParseResult
+
 from pyparsing.exceptions import ParseException
 from pyparsing.parser.base import ParserElement
 from pyparsing.parser.results import ParseResults
@@ -86,13 +88,13 @@ class Literal(Token):
 
     def parseImpl(self, instring, loc, doActions=True):
         if instring[loc] == self.firstMatchChar and instring.startswith(self.match, loc):
-            return loc + self.matchLen, self.match
+            return loc + self.matchLen,  ParseResults(self, [self.match])
         raise ParseException(instring, loc, self.errmsg, self)
 
 class _SingleCharLiteral(Literal):
     def parseImpl(self, instring, loc, doActions=True):
         if instring[loc] == self.firstMatchChar:
-            return loc + 1, self.match
+            return loc + 1,  ParseResults(self, [self.match])
         raise ParseException(instring, loc, self.errmsg, self)
 
 _L = Literal
@@ -154,7 +156,7 @@ class Keyword(Token):
                          or instring[loc + self.matchLen].upper() not in self.identChars)
                     and (loc == 0
                          or instring[loc - 1].upper() not in self.identChars)):
-                return loc + self.matchLen, self.match
+                return loc + self.matchLen, ParseResults(self, [self.match])
 
         else:
             if instring[loc] == self.firstMatchChar:
@@ -162,7 +164,7 @@ class Keyword(Token):
                         and (loc >= len(instring) - self.matchLen
                              or instring[loc + self.matchLen] not in self.identChars)
                         and (loc == 0 or instring[loc - 1] not in self.identChars)):
-                    return loc + self.matchLen, self.match
+                    return loc + self.matchLen, ParseResults(self, [self.match])
 
         raise ParseException(instring, loc, self.errmsg, self)
 
@@ -197,7 +199,7 @@ class CaselessLiteral(Literal):
 
     def parseImpl(self, instring, loc, doActions=True):
         if instring[loc:loc + self.matchLen].upper() == self.match:
-            return loc + self.matchLen, self.returnString
+            return loc + self.matchLen, ParseResults(self, [self.returnString])
         raise ParseException(instring, loc, self.errmsg, self)
 
 class CaselessKeyword(Keyword):
@@ -274,7 +276,7 @@ class CloseMatch(Token):
                         break
             else:
                 loc = match_stringloc + 1
-                results = ParseResults.new_instance(self, [instring[start:loc]])
+                results = ParseResults(self, [instring[start:loc]])
                 results['original'] = match_string
                 results['mismatches'] = mismatches
                 return loc, results
@@ -418,7 +420,7 @@ class Word(Token):
         if throwException:
             raise ParseException(instring, loc, self.errmsg, self)
 
-        return loc, instring[start:loc]
+        return loc, ParseResults(self, [instring[start:loc]])
 
     def __str__(self):
         try:
@@ -448,7 +450,7 @@ class _WordRegex(Word):
             raise ParseException(instring, loc, self.errmsg, self)
 
         loc = result.end()
-        return loc, result.group()
+        return loc, ParseResults(self, [result.group()])
 
 
 class Char(_WordRegex):
@@ -733,7 +735,7 @@ class QuotedString(Token):
                 if self.escQuote:
                     ret = ret.replace(self.escQuote, self.endQuoteChar)
 
-        return loc, ret
+        return loc, ParseResults(self, [ret])
 
     def __str__(self):
         try:
@@ -806,7 +808,7 @@ class CharsNotIn(Token):
         if loc - start < self.minLen:
             raise ParseException(instring, loc, self.errmsg, self)
 
-        return loc, instring[start:loc]
+        return loc, ParseResults(self, [instring[start:loc]])
 
     def __str__(self):
         try:

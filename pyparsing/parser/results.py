@@ -350,15 +350,23 @@ class ParseResults(object):
         # safe to collapse
         if isinstance(other, list):
             Log.error("not expected")
-        elif get_name(self):
-            Log.error("not expected")
-        elif isinstance(other, ParseResults):
+
+        if isinstance(other, ParseResults):
+            name = get_name(other)
             if isinstance(other.type_for_result, Group):
                 get_tokens(self).append(other)
+            elif name:
+                tokens = get_tokens(self)
+                for o in get_tokens(other):
+                    if isinstance(o, ParseResults):
+                        o.name_for_result = name
+                    else:
+                        o = ParseResults(self.type_for_result, [o])
+                    tokens.append(o)
             else:
                 get_tokens(self).extend(other)
         else:
-            Log.error("not expected")
+            get_tokens(self).append(other)
         return self
 
     def __radd__(self, other):
@@ -378,16 +386,17 @@ class ParseResults(object):
 
         return '[' + ', '.join(_ustr(v) if isinstance(v, ParseResults) else repr(v) for v in get_tokens(self)) + ']'
 
-    def _asStringList(self, sep=''):
+    def _asStringList(self):
         out = []
         for item in get_tokens(self):
-            if out and sep:
-                out.append(sep)
             if isinstance(item, ParseResults):
-                out += item._asStringList()
+                out.extend(item._asStringList())
             else:
                 out.append(_ustr(item))
         return out
+
+    def asString(self, sep=''):
+        return sep.join(self._asStringList())
 
     def asList(self):
         """
@@ -451,7 +460,7 @@ class ParseResults(object):
             value = toItem(self)
             return {name: value if len(value) > 1 else value[0]}
         else:
-            return dict((k, toItem(v)[0]) for k, v in self)
+            return dict((k, toItem(v)[0]) for k, v in self._iteritems())
 
     def copy(self):
         """

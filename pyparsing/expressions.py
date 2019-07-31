@@ -186,9 +186,9 @@ class And(ParseExpression):
     def parseImpl(self, instring, loc, doActions=True):
         # pass False as last arg to _parse for first element, since we already
         # pre-parsed the string as part of our And pre-parsing
-        loc, resultlist = self.exprs[0]._parse(instring, loc, doActions, callPreParse=False)
         errorStop = False
-        for e in self.exprs[1:]:
+        acc = []
+        for e in self.exprs:
             if isinstance(e, And._ErrorStop):
                 errorStop = True
                 continue
@@ -203,9 +203,9 @@ class And(ParseExpression):
                     raise ParseSyntaxException(instring, len(instring), self.errmsg, self)
             else:
                 loc, exprtokens = e._parse(instring, loc, doActions)
-            if exprtokens:
-                resultlist += exprtokens
-        return loc, resultlist
+
+            acc.append(exprtokens)
+        return loc, ParseResults(self, [r for r in acc])
 
     def __iadd__(self, other):
         return self.append(self.normalize(other))  # And([self, other])
@@ -383,8 +383,8 @@ class MatchFirst(ParseExpression):
         maxException = None
         for e in self.exprs:
             try:
-                ret = e._parse(instring, loc, doActions)
-                return ret
+                loc, ret = e._parse(instring, loc, doActions)
+                return loc, ParseResults(self, [ret])
             except ParseException as err:
                 if err.loc > maxExcLoc:
                     maxException = err

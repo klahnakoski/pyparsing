@@ -1,8 +1,6 @@
 # encoding: utf-8
 import warnings
 
-from mo_logs import Log
-
 from pyparsing.exceptions import ParseBaseException, ParseException, RecursiveGrammarException
 from pyparsing.parser.base import ParserElement, __diag__
 from pyparsing.parser.results import ParseResults
@@ -124,10 +122,9 @@ class FollowedBy(ParseElementEnhance):
     def parseImpl(self, instring, loc, doActions=True):
         # by using self._expr.parse and deleting the contents of the returned ParseResults list
         # we keep any named results that were defined in the FollowedBy expression
-        _, ret = self.expr._parse(instring, loc, doActions=doActions)
-        del ret[:]
+        self.expr._parse(instring, loc, doActions=doActions)
 
-        return loc, ret
+        return loc, ParseResults(self, [])
 
 
 class PrecededBy(ParseElementEnhance):
@@ -238,7 +235,7 @@ class NotAny(ParseElementEnhance):
     def parseImpl(self, instring, loc, doActions=True):
         if self.expr.canParseNext(instring, loc):
             raise ParseException(instring, loc, self.errmsg, self)
-        return loc, []
+        return loc, ParseResults(self, [])
 
     def __str__(self):
         if hasattr(self, "name"):
@@ -268,9 +265,7 @@ class _MultipleMatch(ParseElementEnhance):
 
         # must be at least one (but first see if we are the stopOn sentinel;
         # if so, fail)
-        if check_ender:
-            try_not_ender(instring, loc)
-        loc, tokens = self_expr_parse(instring, loc, doActions, callPreParse=False)
+        acc = []
         try:
             hasIgnoreExprs = (not not self.ignoreExprs)
             while 1:
@@ -282,11 +277,11 @@ class _MultipleMatch(ParseElementEnhance):
                     preloc = loc
                 loc, tmptokens = self_expr_parse(instring, preloc, doActions)
                 if tmptokens:
-                    tokens += tmptokens
+                    acc.append(tmptokens)
         except (ParseException, IndexError):
             pass
 
-        return loc, tokens
+        return loc, ParseResults(self, acc)
 
     def _setResultsName(self, name, listAllMatches=False):
         if __diag__.warn_ungrouped_named_tokens_in_collection:
@@ -356,7 +351,7 @@ class ZeroOrMore(_MultipleMatch):
         try:
             return super(ZeroOrMore, self).parseImpl(instring, loc, doActions)
         except (ParseException, IndexError):
-            return loc, []
+            return loc, ParseResults(self, [])
 
     def __str__(self):
         if hasattr(self, "name"):
@@ -542,7 +537,7 @@ class SkipTo(ParseElementEnhance):
         # build up return values
         loc = tmploc
         skiptext = instring[startloc:loc]
-        skipresult = ParseResults.new_instance(self, skiptext)
+        skipresult = ParseResults(self, [skiptext])
 
         if self.includeMatch:
             loc, mat = expr_parse(instring, loc, doActions, callPreParse=False)
@@ -713,7 +708,7 @@ class Combine(TokenConverter):
         return self
 
     def postParse(self, instring, loc, tokenlist):
-        retToks = ParseResults.new_instance(self, "".join(tokenlist._asStringList(self.joinString)))
+        retToks = ParseResults(self, [tokenlist.asString(sep=self.joinString)])
 
         if self.resultsName and retToks.haskeys():
             return [retToks]
@@ -789,9 +784,7 @@ class Dict(TokenConverter):
         for i, tok in enumerate(tokenlist):
             if len(tok) == 0:
                 continue
-            ikey = tok[0]
-            if isinstance(ikey, int):
-                ikey = _ustr(tok[0]).strip()
+            ikey = tok[0].asString()
             if len(tok) == 1:
                 tokenlist[ikey] = ""
             elif len(tok) == 2 and not isinstance(tok[1], ParseResults):
@@ -833,7 +826,7 @@ class Suppress(TokenConverter):
     (See also :class:`delimitedList`.)
     """
     def postParse(self, instring, loc, tokenlist):
-        return []
+        return ParseResults(self, [])
 
     def suppress(self):
         return self

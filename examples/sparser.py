@@ -48,6 +48,8 @@ import sys
 import os
 import getopt
 
+from invoke.parser import ParseResult
+
 from pyparsing import *
 
 
@@ -95,12 +97,12 @@ def usage():
 class ToInteger(TokenConverter):
     """Converter to make token into an integer."""
     def postParse( self, instring, loc, tokenlist ):
-        return int(tokenlist[0])
+        return ParseResult(self, [int(tokenlist[0])])
 
 class ToFloat(TokenConverter):
     """Converter to make token into a float."""
     def postParse( self, instring, loc, tokenlist ):
-        return float(tokenlist[0])
+        return ParseResult(self, [float(tokenlist[0])])
 
 class ParseFileLineByLine:
     """
