@@ -7,12 +7,19 @@ from mo_logs import Log
 
 from pyparsing.utils import PY_3, _generatorType, _ustr, _xml_escape, basestring
 
+ParserElement, Forward, Group = [None]*3
+
 _get = object.__getattribute__;
 
 def get_name(tok):
-    if isinstance(tok, ParseResults):
-        return tok.type_for_result.resultsName
-    return None
+    try:
+        if isinstance(tok, Forward):
+            return tok.type_for_result.expr.resultsName
+        if isinstance(tok, ParseResults):
+            return tok.type_for_result.resultsName
+        return None
+    except Exception as e:
+        raise e
 
 def get_tokens(tok):
     if isinstance(tok, ParseResults):
@@ -65,10 +72,12 @@ class ParseResults(object):
     """
 
     @classmethod
-    def new_instance(cls, type, toklist, isinstance=isinstance):
+    def new_instance(cls, result_type, toklist, isinstance=isinstance):
         if not toklist:
-            return ParseResults(type, [], isinstance)
+            return ParseResults(result_type, [], isinstance)
         elif isinstance(toklist, ParseResults):
+            if not isinstance(result_type, Forward):
+                toklist.type_for_result = result_type
             return toklist
         elif toklist is None:
             Log.error("no longer accepted")
@@ -77,9 +86,9 @@ class ParseResults(object):
                 Log.error("do not know how to handle")
             return toklist[0]
         elif isinstance(toklist, _generatorType):
-            return ParseResults(type, list(toklist), isinstance)
+            return ParseResults(result_type, list(toklist), isinstance)
         else:
-            return ParseResults(type, [toklist], isinstance)
+            return ParseResults(result_type, [toklist], isinstance)
 
     __slots__ = ["__toklist", "type_for_result", "__parent"]
 
@@ -90,12 +99,16 @@ class ParseResults(object):
 
     # Performance tuning: we construct a *lot* of these, so keep this
     # constructor as small and fast as possible
-    def __init__(self, type, toklist=None, name=None, isinstance=isinstance):
+    def __init__(self, result_type, toklist=None, name=None, isinstance=isinstance):
+        if not isinstance(result_type, ParserElement):
+            Log.error("not expected")
+        if isinstance(result_type, Forward):
+            Log.error("not expected")
         if isinstance(toklist, ParseResults) or not isinstance(toklist, list):
             Log.error("no longer accepted")
 
         self.__toklist = toklist
-        self.type_for_result = type
+        self.type_for_result = result_type
         self.__parent = None
 
     def __getitem__(self, i):
@@ -339,12 +352,13 @@ class ParseResults(object):
             Log.error("not expected")
         elif get_name(self):
             Log.error("not expected")
-        elif get_name(other):
-            get_tokens(self).append(other)
         elif isinstance(other, ParseResults):
-            get_tokens(self).extend(other)
+            if isinstance(other.type_for_result, Group):
+                get_tokens(self).append(other)
+            else:
+                get_tokens(self).extend(other)
         else:
-            get_tokens(self).append(other)
+            Log.error("not expected")
         return self
 
     def __radd__(self, other):

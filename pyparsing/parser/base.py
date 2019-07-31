@@ -14,9 +14,6 @@ SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith
 
 DEBUG = False
 
-
-DEBUG = True
-
 __diag__ = SimpleNamespace()
 __diag__.__doc__ = """
 Diagnostic configuration (all default to False)
@@ -1302,3 +1299,10 @@ class _PendingSkip(ParserElement):
 
     def parseImpl(self, *args):
         raise Exception("use of `...` expression without following SkipTo target expression")
+
+
+# export
+
+from pyparsing.parser import results
+
+results.ParserElement = ParserElement

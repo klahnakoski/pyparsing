@@ -589,6 +589,9 @@ class Forward(ParseElementEnhance):
         self.skipWhitespace = self.expr.skipWhitespace
         self.saveAsList = self.expr.saveAsList
         self.ignoreExprs.extend(self.expr.ignoreExprs)
+
+        if self.resultsName:
+            other(self.resultsName)
         return self
 
     def __ilshift__(self, other):
@@ -643,6 +646,16 @@ class Forward(ParseElementEnhance):
             ret <<= self
             return ret
 
+    def __call__(self, name=None):
+        # pass the name to expr this Forward represents
+
+        if self.expr:
+            new_expr = self.expr(name)
+            output = self._setResultsName(name) << new_expr
+            return output
+        else:
+            return super(Forward, self).__call__(name)
+
     def _setResultsName(self, name, listAllMatches=False):
         if __diag__.warn_name_set_on_empty_Forward:
             if self.expr is None:
@@ -653,6 +666,7 @@ class Forward(ParseElementEnhance):
                               stacklevel=3)
 
         return super(Forward, self)._setResultsName(name, listAllMatches)
+
 
 class TokenConverter(ParseElementEnhance):
     """
@@ -834,4 +848,6 @@ base.Optional=Optional
 base.NotAny=NotAny
 base.Suppress=Suppress
 
-
+from pyparsing.parser import results
+results.Forward = Forward
+results.Group = Group
