@@ -8,6 +8,14 @@ w = Word(alphas)
 
 class TestStructure(PyparsingExpressionTestCase):
 
+    def test_name(self):
+        self.runTest(
+            expr=w("name"),
+            text="c",
+            expected_list=['c'],
+            expected_dict={'name': 'c'}
+        )
+
     def test_and(self):
         self.runTest(
             expr=(w+w)("name"),
