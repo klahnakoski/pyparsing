@@ -418,7 +418,7 @@ class ParserElement(object):
             else:
                 pass  # OK
         elif tokens.type_for_result is not self:
-            Log.error("expecting correct type to com from self")
+            Log.error("expecting correct type to come from self")
 
         retTokens = tokens
         if self.parseAction and (doActions or self.callDuringTry):
