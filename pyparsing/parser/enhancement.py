@@ -735,7 +735,7 @@ class Group(TokenConverter):
         self.saveAsList = True
 
     def postParse(self, instring, loc, tokenlist):
-        return ParseResults(self, [tokenlist])
+        return ParseResults(self, list(tokenlist))
 
 class Dict(TokenConverter):
     """Converter to return a repetitive expression as a list, but also
@@ -781,26 +781,20 @@ class Dict(TokenConverter):
         self.saveAsList = True
 
     def postParse(self, instring, loc, tokenlist):
+        acc = []
         for i, tok in enumerate(tokenlist):
             if len(tok) == 0:
                 continue
-            ikey = tok[0].asString()
+            ikey = ParserElement()(tok[0])
             if len(tok) == 1:
-                tokenlist[ikey] = ""
+                new_tok = ParseResults(tok.type_for_result, [ParseResults(ikey, [])])
             elif len(tok) == 2 and not isinstance(tok[1], ParseResults):
-                tokenlist[ikey] = tok[1]
+                new_tok = ParseResults(tok.type_for_result, [tok[0], ParseResults(ikey, [tok[1]])])
             else:
-                dictvalue = tok.copy()  # ParseResults(i)
-                del dictvalue[0]
-                if len(dictvalue) != 1 or (isinstance(dictvalue, ParseResults) and dictvalue.haskeys()):
-                    tokenlist[ikey] = dictvalue
-                else:
-                    tokenlist[ikey] = dictvalue[0]
+                new_tok = ParseResults(tok.type_for_result, [tok[0], ParseResults(ikey, list(tok[1]))])
+            acc.append(new_tok)
 
-        if self.resultsName:
-            return [tokenlist]
-        else:
-            return tokenlist
+        return ParseResults(self, acc)
 
 
 class Suppress(TokenConverter):

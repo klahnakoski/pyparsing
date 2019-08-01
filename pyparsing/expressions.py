@@ -2,9 +2,11 @@
 from operator import itemgetter
 import warnings
 
+from mo_logs import Log
+
 from pyparsing.exceptions import ParseBaseException, ParseException, ParseSyntaxException
 from pyparsing.parser.base import ParserElement, _PendingSkip, __diag__
-from pyparsing.parser.enhancement import OneOrMore, Optional, SkipTo, Suppress, ZeroOrMore
+from pyparsing.parser.enhancement import OneOrMore, Optional, SkipTo, Suppress, ZeroOrMore, Group
 from pyparsing.parser.results import ParseResults
 from pyparsing.parser.tokens import Empty
 from pyparsing.utils import Iterable, __compat__, _generatorType, _ustr
@@ -204,8 +206,14 @@ class And(ParseExpression):
             else:
                 loc, exprtokens = e._parse(instring, loc, doActions)
 
-            acc.append(exprtokens)
-        return loc, ParseResults(self, [r for r in acc])
+            if exprtokens.name_for_result:
+                Log.error("do not know how to handle")
+            # elif isinstance(exprtokens.type_for_result, Group):
+            #     acc.append(exprtokens)
+            else:
+                acc.extend(iter(exprtokens))
+
+        return loc, ParseResults(self, acc)
 
     def __iadd__(self, other):
         return self.append(self.normalize(other))  # And([self, other])
@@ -384,7 +392,7 @@ class MatchFirst(ParseExpression):
         for e in self.exprs:
             try:
                 loc, ret = e._parse(instring, loc, doActions)
-                return loc, ParseResults(self, [ret])
+                return loc, ParseResults(self, ret.tokens_for_result)
             except ParseException as err:
                 if err.loc > maxExcLoc:
                     maxException = err

@@ -23,8 +23,17 @@ def get_name(tok):
 
 def get_tokens(tok):
     if isinstance(tok, ParseResults):
-        return _get(tok, "_ParseResults__toklist")
+        return _get(tok, "tokens_for_result")
     return None
+
+
+def flatten(tok):
+    if isinstance(tok, ParseResults):
+        if len(tok) == 1:
+            return tok[0]
+        return list(tok)
+    else:
+        return tok
 
 
 class ParseResults(object):
@@ -90,12 +99,11 @@ class ParseResults(object):
         else:
             return ParseResults(result_type, [toklist], isinstance)
 
-    __slots__ = ["__toklist", "type_for_result", "__parent"]
+    __slots__ = ["tokens_for_result", "type_for_result", "__parent"]
 
     @property
     def name_for_result(self):
         return get_name(self)
-
 
     # Performance tuning: we construct a *lot* of these, so keep this
     # constructor as small and fast as possible
@@ -107,7 +115,7 @@ class ParseResults(object):
         if isinstance(toklist, ParseResults) or not isinstance(toklist, list):
             Log.error("no longer accepted")
 
-        self.__toklist = toklist
+        self.tokens_for_result = toklist
         self.type_for_result = result_type
         self.__parent = None
 
@@ -136,7 +144,7 @@ class ParseResults(object):
         if isinstance(i, (int, slice)):
             del get_tokens(self)[i]
         else:
-            self.__toklist = [r for r in get_tokens(self) if get_name(r) != i]
+            self.tokens_for_result = [r for r in get_tokens(self) if get_name(r) != i]
 
     def __contains__(self, k):
         return any(get_name(r) == k for r in get_tokens(self))
@@ -445,22 +453,28 @@ class ParseResults(object):
             print(json.dumps(result.asDict())) # -> {"month": "31", "day": "1999", "year": "12"}
         """
         def toItem(obj):
+            # return open list of (k,v) pairs
             if isinstance(obj, ParseResults):
-                if obj.haskeys():
-                    return [obj.asDict()]
-                elif isinstance(obj.type_for_result, Group):
-                    return [[vv for v in get_tokens(obj) for vv in toItem(v)]]
+                name = get_name(obj)
+                if name:
+                    yield name, flatten(obj)
                 else:
-                    return [vv for v in get_tokens(obj) for vv in toItem(v)]
+                    for tok in obj:
+                        for p in toItem(tok):
+                            yield p
             else:
-                return [obj]
+                yield None, obj
 
-        name = get_name(self)
-        if name:
-            value = toItem(self)
-            return {name: value if len(value) > 1 else value[0]}
+        acc=[]
+        d = {}
+        for k, v in toItem(self):
+            if k is not None:
+                d[k] = v
+            acc.append(v)
+        if d:
+            return d
         else:
-            return dict((k, toItem(v)[0]) for k, v in self._iteritems())
+            return acc
 
     def copy(self):
         """
@@ -675,7 +689,7 @@ class ParseResults(object):
                  get_name(self)))
 
     def __setstate__(self, state):
-        self.__toklist, (par, self.type_for_result) = state
+        self.tokens_for_result, (par, self.type_for_result) = state
         if par is not None:
             self.__parent = wkref(par)
         else:
@@ -714,7 +728,6 @@ class ParseResults(object):
         if name is not None:
             ret = cls([ret], name=name)
         return ret
-
 
 MutableMapping.register(ParseResults)
 

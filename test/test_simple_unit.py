@@ -10,6 +10,8 @@
 from __future__ import division
 
 import unittest
+from unittest import skip
+
 import pyparsing as pp
 from collections import namedtuple
 from datetime import datetime
