@@ -487,6 +487,8 @@ class TestCommonHelperExpressions(PyparsingExpressionTestCase):
             expr=(pp.Keyword('if')
                   + pp.nestedExpr()('condition')
                   + pp.nestedExpr('{', '}')('body')),
+            #     0         1         2         3
+            #     0123456789012345678901234567890123456789
             text='if ((x == y) || !z) {printf("{}");}',
             expected_list=['if', [['x', '==', 'y'], '||', '!z'], ['printf(', '"{}"', ');']],
             expected_dict={'condition': [[['x', '==', 'y'], '||', '!z']],

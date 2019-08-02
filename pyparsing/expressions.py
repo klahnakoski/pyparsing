@@ -208,8 +208,8 @@ class And(ParseExpression):
 
             if exprtokens.name_for_result:
                 Log.error("do not know how to handle")
-            # elif isinstance(exprtokens.type_for_result, Group):
-            #     acc.append(exprtokens)
+            elif isinstance(exprtokens.type_for_result, Group):
+                acc.append(exprtokens)
             else:
                 acc.extend(iter(exprtokens))
 
