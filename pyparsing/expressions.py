@@ -206,10 +206,13 @@ class And(ParseExpression):
             else:
                 loc, exprtokens = e._parse(instring, loc, doActions)
 
-            if exprtokens.name_for_result:
-                Log.error("do not know how to handle")
-            elif isinstance(exprtokens.type_for_result, Group):
+            if isinstance(exprtokens.type_for_result, Group):
                 acc.append(exprtokens)
+            elif exprtokens.name_for_result:
+                if len(exprtokens) == 1:
+                    acc.append(exprtokens)
+                else:
+                    Log.error("do not know how to handle")
             else:
                 acc.extend(iter(exprtokens))
 
@@ -392,7 +395,7 @@ class MatchFirst(ParseExpression):
         for e in self.exprs:
             try:
                 loc, ret = e._parse(instring, loc, doActions)
-                return loc, ParseResults(self, ret.tokens_for_result)
+                return loc, ParseResults(self, [ret])
             except ParseException as err:
                 if err.loc > maxExcLoc:
                     maxException = err

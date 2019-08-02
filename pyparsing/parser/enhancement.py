@@ -266,6 +266,13 @@ class _MultipleMatch(ParseElementEnhance):
         # must be at least one (but first see if we are the stopOn sentinel;
         # if so, fail)
         acc = []
+        if check_ender:
+            try_not_ender(instring, loc)
+        preloc = loc
+        loc, tmptokens = self_expr_parse(instring, preloc, doActions)
+        if tmptokens:
+            acc.append(tmptokens)
+
         try:
             hasIgnoreExprs = (not not self.ignoreExprs)
             while 1:
@@ -735,7 +742,7 @@ class Group(TokenConverter):
         self.saveAsList = True
 
     def postParse(self, instring, loc, tokenlist):
-        return ParseResults(self, list(tokenlist))
+        return ParseResults(self, [tokenlist])
 
 class Dict(TokenConverter):
     """Converter to return a repetitive expression as a list, but also

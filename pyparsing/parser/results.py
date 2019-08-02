@@ -27,15 +27,6 @@ def get_tokens(tok):
     return None
 
 
-def flatten(tok):
-    if isinstance(tok, ParseResults):
-        if len(tok) == 1:
-            return tok[0]
-        return list(tok)
-    else:
-        return tok
-
-
 class ParseResults(object):
     """Structured parse results, to provide multiple means of access to
     the parsed data:
@@ -121,30 +112,32 @@ class ParseResults(object):
 
     def __getitem__(self, i):
         if isinstance(i, (int, slice)):
-            return get_tokens(self)[i]
+            for ii, v in enumerate(self):
+                if i == ii:
+                    return v
         else:
             for tok in get_tokens(self):
                 if get_name(tok) == i:
                     return tok
 
-    def __setitem__(self, k, v, isinstance=isinstance):
-        if isinstance(k, (int, slice)):
-            get_tokens(self)[k] = v
-        else:
-            for i, v in enumerate(get_tokens(self)):
-                if get_name(v) == k:
-                    get_tokens(self)[i] = v
-                    break
-            else:
-                Log.error("not expected")
-        if isinstance(v, ParseResults):
-            v.__parent = wkref(self)
-
-    def __delitem__(self, i):
-        if isinstance(i, (int, slice)):
-            del get_tokens(self)[i]
-        else:
-            self.tokens_for_result = [r for r in get_tokens(self) if get_name(r) != i]
+    # def __setitem__(self, k, v, isinstance=isinstance):
+    #     if isinstance(k, (int, slice)):
+    #         get_tokens(self)[k] = v
+    #     else:
+    #         for i, v in enumerate(get_tokens(self)):
+    #             if get_name(v) == k:
+    #                 get_tokens(self)[i] = v
+    #                 break
+    #         else:
+    #             Log.error("not expected")
+    #     if isinstance(v, ParseResults):
+    #         v.__parent = wkref(self)
+    #
+    # def __delitem__(self, i):
+    #     if isinstance(i, (int, slice)):
+    #         del get_tokens(self)[i]
+    #     else:
+    #         self.tokens_for_result = [r for r in get_tokens(self) if get_name(r) != i]
 
     def __contains__(self, k):
         return any(get_name(r) == k for r in get_tokens(self))
@@ -157,7 +150,15 @@ class ParseResults(object):
     __nonzero__ = __bool__
 
     def __iter__(self):
-        return iter(get_tokens(self))
+        if isinstance(self.type_for_result, Group):
+            yield [mm for r in get_tokens(self) for mm in r]
+        else:
+            for r in get_tokens(self):
+                if isinstance(r, ParseResults):
+                    for mm in r:
+                        yield mm
+                else:
+                    yield r
 
     def __reversed__(self):
         return reversed(get_tokens(self))
@@ -421,16 +422,11 @@ class ParseResults(object):
             result_list = result.asList()
             print(type(result_list), result_list) # -> <class 'list'> ['sldkj', 'lsdkj', 'sldkj']
         """
-        def more(res):
-            if isinstance(res, ParseResults):
-                if isinstance(res.type_for_result, Group):
-                    return [[mm for r in get_tokens(res) for mm in more(r)]]
-                else:
-                    return [mm for r in get_tokens(res) for mm in more(r)]
-            else:
-                return [res]
-
-        return more(self)
+        output = list(self)
+        if isinstance(self.type_for_result, Group):
+            return output
+        else:
+            return output
 
     def asDict(self):
         """
@@ -456,10 +452,12 @@ class ParseResults(object):
             # return open list of (k,v) pairs
             if isinstance(obj, ParseResults):
                 name = get_name(obj)
-                if name:
-                    yield name, flatten(obj)
+                if isinstance(obj.type_for_result, Group):
+                    yield name, [obj.asList()]
+                elif name:
+                    yield name, obj.asList()
                 else:
-                    for tok in obj:
+                    for tok in obj.tokens_for_result:
                         for p in toItem(tok):
                             yield p
             else:
@@ -480,7 +478,7 @@ class ParseResults(object):
         """
         Returns a new copy of a :class:`ParseResults` object.
         """
-        ret = ParseResults(get_tokens(self)[:], get_name(self))
+        ret = ParseResults(self, get_tokens(self))
         ret.__parent = self.__parent
         return ret
 

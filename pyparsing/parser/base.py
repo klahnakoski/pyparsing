@@ -15,7 +15,7 @@ from pyparsing.utils import PY_3, RLock, SimpleNamespace, _MAX_INT, _OrderedDict
 # import later
 SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith, quotedString, And, MatchFirst, Or, Each, Empty, StringEnd, Literal, Token = [None] * 17
 
-DEBUG = True
+DEBUG = False
 
 __diag__ = SimpleNamespace()
 __diag__.__doc__ = """
