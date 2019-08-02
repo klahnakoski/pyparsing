@@ -845,3 +845,4 @@ base.Suppress=Suppress
 from pyparsing.parser import results
 results.Forward = Forward
 results.Group = Group
+results.Suppress = Suppress

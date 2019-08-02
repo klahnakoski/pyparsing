@@ -1,5 +1,6 @@
 # encoding: utf-8
 from collections import Mapping, MutableMapping
+from itertools import count
 from pprint import pprint
 from weakref import ref as wkref
 
@@ -7,7 +8,7 @@ from mo_logs import Log
 
 from pyparsing.utils import PY_3, _generatorType, _ustr, _xml_escape, basestring
 
-ParserElement, Forward, Group = [None]*3
+Suppress, ParserElement, Forward, Group = [None]*4
 
 _get = object.__getattribute__;
 
@@ -25,6 +26,7 @@ def get_tokens(tok):
     if isinstance(tok, ParseResults):
         return _get(tok, "tokens_for_result")
     return None
+
 
 
 class ParseResults(object):
@@ -86,9 +88,9 @@ class ParseResults(object):
                 Log.error("do not know how to handle")
             return toklist[0]
         elif isinstance(toklist, _generatorType):
-            return ParseResults(result_type, list(toklist), isinstance)
+            return ParseResults(result_type, list(toklist))
         else:
-            return ParseResults(result_type, [toklist], isinstance)
+            return ParseResults(result_type, [toklist])
 
     __slots__ = ["tokens_for_result", "type_for_result", "__parent"]
 
@@ -98,7 +100,7 @@ class ParseResults(object):
 
     # Performance tuning: we construct a *lot* of these, so keep this
     # constructor as small and fast as possible
-    def __init__(self, result_type, toklist=None, name=None, isinstance=isinstance):
+    def __init__(self, result_type, toklist=None):
         if not isinstance(result_type, ParserElement):
             Log.error("not expected")
         if isinstance(result_type, Forward):
@@ -123,19 +125,19 @@ class ParseResults(object):
                 if get_name(tok) == i:
                     return tok
 
-    # def __setitem__(self, k, v, isinstance=isinstance):
-    #     if isinstance(k, (int, slice)):
-    #         get_tokens(self)[k] = v
-    #     else:
-    #         for i, v in enumerate(get_tokens(self)):
-    #             if get_name(v) == k:
-    #                 get_tokens(self)[i] = v
-    #                 break
-    #         else:
-    #             Log.error("not expected")
-    #     if isinstance(v, ParseResults):
-    #         v.__parent = wkref(self)
-    #
+    def __setitem__(self, k, v, isinstance=isinstance):
+        if isinstance(k, (int, slice)):
+            get_tokens(self)[k] = v
+        else:
+            for i, vv in enumerate(get_tokens(self)):
+                if get_name(vv) == k:
+                    get_tokens(self)[i] = v
+                    break
+            else:
+                self.tokens_for_result.append(Annotation(k, v))
+        if isinstance(v, ParseResults):
+            v.__parent = wkref(self)
+
     # def __delitem__(self, i):
     #     if isinstance(i, (int, slice)):
     #         del get_tokens(self)[i]
@@ -149,14 +151,16 @@ class ParseResults(object):
         if isinstance(self.type_for_result, Group):
             return len(self.tokens_for_result[0])
         else:
-            return len(get_tokens(self))
+            return sum(1 for t in self.tokens_for_result if not isinstance(t, Annotation))
 
     def __bool__(self):
         return (not not get_tokens(self))
     __nonzero__ = __bool__
 
     def __iter__(self):
-        if isinstance(self.type_for_result, Group):
+        if isinstance(self.type_for_result, Suppress):
+            return
+        elif isinstance(self.type_for_result, Group):
             yield [
                 mm
                 for r in get_tokens(self)
@@ -462,7 +466,10 @@ class ParseResults(object):
             # return open list of (k, list(v)) pairs
             if isinstance(obj, ParseResults):
                 name = get_name(obj)
-                if isinstance(obj.type_for_result, Group):
+                if isinstance(obj, Annotation):
+                    # results not found in the original data
+                    yield obj.name_for_result, obj.tokens_for_result
+                elif isinstance(obj.type_for_result, Group):
                     yield name, [obj.asList()]
                 elif name:
                     yield name, obj.asList()
@@ -742,6 +749,15 @@ class ParseResults(object):
         if name is not None:
             ret = cls([ret], name=name)
         return ret
+
+
+class Annotation(ParseResults):
+    # Append one of these to the parse results to
+    # add key: value pair not found in the original text
+
+    def __init__(self, name, value):
+        ParseResults.__init__(self, Suppress(None)(name), [value])
+
 
 MutableMapping.register(ParseResults)
 
