@@ -9,12 +9,11 @@
 #
 from __future__ import division
 
-import unittest
-from unittest import skip
-
-import pyparsing as pp
 from collections import namedtuple
 from datetime import datetime
+import unittest
+
+import pyparsing as pp
 
 # Test spec data class for specifying simple pyparsing test cases
 PpTestSpec = namedtuple("PpTestSpec", "desc expr text parse_fn "
