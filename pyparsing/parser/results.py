@@ -112,9 +112,12 @@ class ParseResults(object):
 
     def __getitem__(self, i):
         if isinstance(i, (int, slice)):
-            for ii, v in enumerate(self):
-                if i == ii:
-                    return v
+            if isinstance(self.type_for_result, Group):
+                return self.tokens_for_result[0][i]
+            else:
+                for ii, v in enumerate(self):
+                    if i == ii:
+                        return v
         else:
             for tok in get_tokens(self):
                 if get_name(tok) == i:
@@ -143,7 +146,10 @@ class ParseResults(object):
         return any(get_name(r) == k for r in get_tokens(self))
 
     def __len__(self):
-        return len(get_tokens(self))
+        if isinstance(self.type_for_result, Group):
+            return len(self.tokens_for_result[0])
+        else:
+            return len(get_tokens(self))
 
     def __bool__(self):
         return (not not get_tokens(self))
@@ -151,7 +157,11 @@ class ParseResults(object):
 
     def __iter__(self):
         if isinstance(self.type_for_result, Group):
-            yield [mm for r in get_tokens(self) for mm in r]
+            yield [
+                mm
+                for r in get_tokens(self)
+                for mm in (r if isinstance(r, ParseResults) else [r])
+            ]
         else:
             for r in get_tokens(self):
                 if isinstance(r, ParseResults):
@@ -463,7 +473,7 @@ class ParseResults(object):
             else:
                 yield None, [obj]
 
-        acc=[]
+        acc = []
         d = {}
         for k, v in toItem(self):
             if k is not None:

@@ -789,7 +789,7 @@ class Dict(TokenConverter):
 
     def postParse(self, instring, loc, tokenlist):
         acc = []
-        for i, tok in enumerate(tokenlist):
+        for i, tok in enumerate(tokenlist.tokens_for_result):
             if len(tok) == 0:
                 continue
             ikey = ParserElement()(tok[0])
