@@ -3,7 +3,7 @@ import warnings
 
 from pyparsing.exceptions import ParseBaseException, ParseException, RecursiveGrammarException
 from pyparsing.parser.base import ParserElement, __diag__
-from pyparsing.parser.results import ParseResults
+from pyparsing.parser.results import ParseResults, Annotation
 from pyparsing.utils import _MAX_INT, _ustr
 
 # import later
@@ -788,17 +788,17 @@ class Dict(TokenConverter):
         self.saveAsList = True
 
     def postParse(self, instring, loc, tokenlist):
-        acc = []
-        for i, tok in list(enumerate(tokenlist.tokens_for_result)):
+        acc = tokenlist.tokens_for_result
+        for i, tok in list(enumerate(acc)):
             if len(tok) == 0:
                 continue
-            ikey = ParserElement()(tok[0])
+            ikey = tok[0]
             if len(tok) == 1:
-                new_tok = ParseResults(tok.type_for_result, [ParseResults(ikey, [])])
+                new_tok = Annotation(ikey, "")
             elif len(tok) == 2 and not isinstance(tok[1], ParseResults):
-                new_tok = ParseResults(tok.type_for_result, [tok[0], ParseResults(ikey, [tok[1]])])
+                new_tok = Annotation(ikey, tok[1])
             else:
-                new_tok = ParseResults(tok.type_for_result, [tok[0], ParseResults(ikey, list(tok[1]))])
+                new_tok = Annotation(ikey, list(tok[1]))
             acc.append(new_tok)
 
         return ParseResults(self, acc)
