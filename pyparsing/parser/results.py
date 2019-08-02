@@ -449,7 +449,7 @@ class ParseResults(object):
             print(json.dumps(result.asDict())) # -> {"month": "31", "day": "1999", "year": "12"}
         """
         def toItem(obj):
-            # return open list of (k,v) pairs
+            # return open list of (k, list(v)) pairs
             if isinstance(obj, ParseResults):
                 name = get_name(obj)
                 if isinstance(obj.type_for_result, Group):
@@ -461,15 +461,21 @@ class ParseResults(object):
                         for p in toItem(tok):
                             yield p
             else:
-                yield None, obj
+                yield None, [obj]
 
         acc=[]
         d = {}
         for k, v in toItem(self):
             if k is not None:
-                d[k] = v
+                old_v = d.get(k)
+                if old_v is None:
+                    d[k] = v
+                elif isinstance(old_v, list):
+                    old_v.extend(v)
             acc.append(v)
         if d:
+            for k, v in list(d.items()):
+                d[k] = v if len(v) > 1 else v[0]
             return d
         else:
             return acc
