@@ -216,6 +216,7 @@ def conditionAsParseAction(fn, message=None, fatal=False):
     def pa(s, l, t):
         if not bool(fn(s, l, t)):
             raise exc_type(s, l, msg)
+        return t
 
     return pa
 

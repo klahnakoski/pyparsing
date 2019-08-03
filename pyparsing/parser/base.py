@@ -2,7 +2,7 @@
 from contextlib import contextmanager
 import copy
 from copy import copy
-from datetime import datetime
+from datetime import datetime, date
 import types
 import warnings
 
@@ -412,7 +412,7 @@ class ParserElement(object):
 
         if not isinstance(tokens, ParseResults):
             Log.error("expecting ParseResult")
-        if self.__class__.__name__=="Forward":
+        if self.__class__.__name__ == "Forward":
             if self.expr is not tokens.type_for_result:
                 Log.error("expecting correct type to com from self")
             else:
@@ -432,8 +432,18 @@ class ParserElement(object):
                             exc.__cause__ = parse_action_exc
                             raise exc
 
-                        if tokens is not None and tokens is not retTokens:
-                            retTokens = ParseResults.new_instance(self, tokens)
+                        if isinstance(tokens, list):
+                            tokens = ParseResults(self, tokens)
+                        elif isinstance(tokens, ParseResults):
+                            pass
+                        elif isinstance(tokens, (basestring, int, float, datetime)):
+                            tokens = ParseResults(self, [tokens])
+                        elif tokens is None:
+                            tokens = ParseResults(self, [])
+                        else:
+                            Log.error("not understood")
+
+                        retTokens = tokens
                 except Exception as err:
                     # ~ print "Exception raised in user parse action:", err
                     if self.debugActions[FAIL]:
@@ -447,10 +457,11 @@ class ParserElement(object):
                             tokens = ParseResults(self, tokens)
                         elif isinstance(tokens, ParseResults):
                             pass
-                        elif isinstance(tokens, (basestring, int, float, datetime)):
+                        elif isinstance(tokens, (basestring, int, float, datetime, date)):
                             tokens = ParseResults(self, [tokens])
                         elif tokens is None:
-                            ParseResults(self, [])
+                            # Assume tokens are kept
+                            tokens = retTokens
                         else:
                             Log.error("not understood")
                     except IndexError as parse_action_exc:
@@ -458,8 +469,7 @@ class ParserElement(object):
                         exc.__cause__ = parse_action_exc
                         raise exc
 
-                    if tokens is not None and tokens is not retTokens:
-                        retTokens = tokens
+                    retTokens = tokens
         if debugging:
             # ~ print ("Matched", self, "->", retTokens.asList())
             if self.debugActions[MATCH]:
@@ -577,19 +587,21 @@ class ParserElement(object):
             if value is cache.not_in_cache:
                 ParserElement.packrat_cache_stats[MISS] += 1
                 try:
-                    value = self._parseNoCache(instring, loc, doActions, callPreParse)
+                    loc, tok = self._parseNoCache(instring, loc, doActions, callPreParse)
+                    if not isinstance(tok, ParseResults):
+                        Log.error("expecting prase results from {{type}}", type=value[1].__class__.__name__)
                 except ParseBaseException as pe:
                     # cache a copy of the exception, without the traceback
                     cache.set(lookup, pe.__class__(*pe.args))
                     raise
                 else:
-                    cache.set(lookup, (value[0], value[1].copy()))
-                    return value
+                    cache.set(lookup, (loc, copy(tok)))
+                    return loc, tok
             else:
                 ParserElement.packrat_cache_stats[HIT] += 1
                 if isinstance(value, Exception):
                     raise value
-                return value[0], value[1].copy()
+                return value[0], copy(value[1])
 
     _parse = _parseNoCache
 
@@ -739,7 +751,7 @@ class ParserElement(object):
                 try:
                     preloc = preparseFn(instring, loc)
                     nextLoc, tokens = parseFn(instring, preloc, callPreParse=False)
-                except ParseException:
+                except ParseException as e:
                     loc = preloc + 1
                 else:
                     if nextLoc > loc:
@@ -829,8 +841,11 @@ class ParserElement(object):
             [['More'], ['Iron'], ['Lead'], ['Gold'], ['I'], ['Electricity']]
             ['More', 'Iron', 'Lead', 'Gold', 'I', 'Electricity']
         """
+
+        from pyparsing.parser.enhancement import Group
+        g = Group(None)
         try:
-            return ParseResults.new_instance(self, [t for t, s, e in self.scanString(instring, maxMatches)])
+            return ParseResults(self, [ParseResults(g, [t]) for t, s, e in self.scanString(instring, maxMatches)])
         except ParseBaseException as exc:
             if ParserElement.verbose_stacktrace:
                 raise

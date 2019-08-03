@@ -3,9 +3,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 import string
 import sys
-import traceback
-
-from mo_logs import Log
 
 try:
     # Python 3
@@ -53,6 +50,10 @@ if PY_3:
     # build list of single arg builtins, that can be used as parse actions
     singleArgBuiltins = [sum, len, sorted, reversed, list, tuple, set, any, all, min, max]
 
+    def get_function_arguments(func):
+        return func.__code__.co_varnames[:func.__code__.co_argcount]
+
+
 else:
     from __builtin__ import unicode
 
@@ -94,6 +95,11 @@ else:
             singleArgBuiltins.append(getattr(__builtin__, fname))
         except AttributeError:
             continue
+
+
+    def get_function_arguments(func):
+        return func.func_code.co_varnames[:func.func_code.co_argcount]
+
 
 _generatorType = type((y for y in range(1)))
 
@@ -165,61 +171,22 @@ def line(loc, strg):
 def _trim_arity(func, maxargs=2):
     if func in singleArgBuiltins:
         return lambda s, l, t: func(t)
-    limit = [0]
-    foundArity = [False]
 
-    # traceback return data structure changed in Py3.5 - normalize back to plain tuples
-    if system_version[:2] >= (3, 5):
-        def extract_stack(limit=0):
-            # special handling for Python 3.5.0 - extra deep call stack by 1
-            offset = -3 if system_version == (3, 5, 0) else -2
-            frame_summary = traceback.extract_stack(limit=-offset + limit - 1)[offset]
-            return [frame_summary[:2]]
-        def extract_tb(tb, limit=0):
-            frames = traceback.extract_tb(tb, limit=limit)
-            frame_summary = frames[-1]
-            return [frame_summary[:2]]
-    else:
-        extract_stack = traceback.extract_stack
-        extract_tb = traceback.extract_tb
-
-    # synthesize what would be returned by traceback.extract_stack at the call to
-    # user's parse action 'func', so that we don't incur call penalty at parse time
-
-    LINE_DIFF = 6
-    # IF ANY CODE CHANGES, EVEN JUST COMMENTS OR BLANK LINES, BETWEEN THE NEXT LINE AND
-    # THE CALL TO FUNC INSIDE WRAPPER, LINE_DIFF MUST BE MODIFIED!!!!
-    this_line = extract_stack(limit=2)[-1]
-    pa_call_line_synth = (this_line[0], this_line[1] + LINE_DIFF)
+    f_args = get_function_arguments(func)
+    self_arg = 1 if f_args[0] == "self" else 0
+    start = 3 + self_arg - len(f_args)
 
     def wrapper(*args):
-        while 1:
-            try:
-                ret = func(*args[limit[0]:])
-                foundArity[0] = True
-                return ret
-            except TypeError:
-                # re-raise TypeErrors if they did not come from our arity testing
-                if foundArity[0]:
-                    raise
-                else:
-                    try:
-                        tb = sys.exc_info()[-1]
-                        if not extract_tb(tb, limit=2)[-1][:2] == pa_call_line_synth:
-                            raise
-                    finally:
-                        try:
-                            del tb
-                        except NameError:
-                            pass
-
-                if limit[0] <= maxargs:
-                    limit[0] += 1
-                    continue
-                raise
+        try:
+            ret = func(*args[start:])
+            return ret
+        except Exception as e:
+            from pyparsing import ParseException
+            f = ParseException("function failed")
+            f.__cause__ = e
+            raise f
 
     # copy func name to wrapper for sensible debug output
-    func_name = "<parse action>"
     try:
         func_name = getattr(func, '__name__',
                             getattr(func, '__class__').__name__)
@@ -244,7 +211,7 @@ def _defaultStartDebugAction(instring, loc, expr):
     print("Match " + _ustr(expr) + " at loc " + _ustr(loc) + "(%d,%d)" % (lineno(loc, instring), col(loc, instring)))
 
 def _defaultSuccessDebugAction(instring, startloc, endloc, expr, toks):
-    print("Matched " + _ustr(expr) + " -> " + str(toks.asList()))
+    print("Matched " + _ustr(expr) + " -> " + str(toks))
 
 def _defaultExceptionDebugAction(instring, loc, expr, exc):
     print("Exception raised:" + _ustr(exc))

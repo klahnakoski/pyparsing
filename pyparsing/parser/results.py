@@ -67,26 +67,7 @@ class ParseResults(object):
         - year: 1999
     """
 
-    @classmethod
-    def new_instance(cls, result_type, toklist, isinstance=isinstance):
-        if not toklist:
-            return ParseResults(result_type, [], isinstance)
-        elif isinstance(toklist, ParseResults):
-            if not isinstance(result_type, Forward):
-                toklist.type_for_result = result_type
-            return toklist
-        elif toklist is None:
-            Log.error("no longer accepted")
-        elif isinstance(toklist, list):
-            if len(toklist) != 1:
-                Log.error("do not know how to handle")
-            return toklist[0]
-        elif isinstance(toklist, _generatorType):
-            return ParseResults(result_type, list(toklist))
-        else:
-            return ParseResults(result_type, [toklist])
-
-    __slots__ = ["tokens_for_result", "type_for_result", "__parent"]
+    __slots__ = ["tokens_for_result", "type_for_result"]
 
     @property
     def name_for_result(self):
@@ -104,7 +85,6 @@ class ParseResults(object):
 
         self.tokens_for_result = toklist
         self.type_for_result = result_type
-        self.__parent = None
 
     def __getitem__(self, i):
         if isinstance(i, (int, slice)):
@@ -120,9 +100,9 @@ class ParseResults(object):
                     if len(tok) > 1:
                         return tok
                     else:
-                        return tok[0]
+                        return tok.tokens_for_result[0]
 
-    def __setitem__(self, k, v, isinstance=isinstance):
+    def __setitem__(self, k, v):
         if isinstance(k, (int, slice)):
             self.tokens_for_result[k] = v
         else:
@@ -132,8 +112,6 @@ class ParseResults(object):
                     break
             else:
                 self.tokens_for_result.append(Annotation(k, v))
-        if isinstance(v, ParseResults):
-            v.__parent = wkref(self)
 
     # def __delitem__(self, i):
     #     if isinstance(i, (int, slice)):
@@ -362,7 +340,7 @@ class ParseResults(object):
             return ""
 
     def __add__(self, other):
-        ret = self.copy()
+        ret = copy(self)
         ret += other
         return ret
 
@@ -494,12 +472,11 @@ class ParseResults(object):
         else:
             return acc
 
-    def copy(self):
+    def __copy__(self):
         """
         Returns a new copy of a :class:`ParseResults` object.
         """
-        ret = ParseResults(self, self.tokens_for_result)
-        ret.__parent = self.__parent
+        ret = ParseResults(self.type_for_result, list(self.tokens_for_result))
         return ret
 
     def asXML(self, doctag=None, namedItemsOnly=False, indent="", formatted=True):
@@ -532,7 +509,7 @@ class ParseResults(object):
 
         out += [nl, indent, "<", selfTag, ">"]
 
-        for i, (name, res) in enumerate(self.tokens_for_result):
+        for i, res in enumerate(self.tokens_for_result):
             if isinstance(res, ParseResults):
                 if i in namedItems:
                     out += [res.asXML(namedItems[i],
@@ -595,12 +572,6 @@ class ParseResults(object):
         """
         if get_name(self):
             return get_name(self)
-        elif self.__parent:
-            par = self.__parent()
-            if par:
-                return par.__lookup(self)
-            else:
-                return None
         elif len(self.tokens_for_result) == 1:
             return get_name(self.tokens_for_result[0])
         else:
@@ -702,16 +673,11 @@ class ParseResults(object):
     def __getstate__(self):
         return (self.tokens_for_result,
                 (
-                 self.__parent is not None and self.__parent() or None,
                  self.type_for_result,
                  get_name(self)))
 
     def __setstate__(self, state):
-        self.tokens_for_result, (par, self.type_for_result) = state
-        if par is not None:
-            self.__parent = wkref(par)
-        else:
-            self.__parent = None
+        self.tokens_for_result, (self.type_for_result) = state
 
     def __getnewargs__(self):
         return self.type_for_result, self.tokens_for_result, get_name(self), self.__asList

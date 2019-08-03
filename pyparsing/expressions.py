@@ -206,6 +206,8 @@ class And(ParseExpression):
             else:
                 loc, exprtokens = e._parse(instring, loc, doActions)
 
+            if not isinstance(exprtokens, ParseResults):
+                Log.error("expecting {{type}} to emit parseresults", type=e.__class__.__name__)
             if isinstance(exprtokens.type_for_result, Group):
                 acc.append(exprtokens)
             elif exprtokens.name_for_result:
@@ -297,7 +299,7 @@ class Or(ParseExpression):
                 # no further conditions or parse actions to change the selection of
                 # alternative, so the first match will be the best match
                 best_expr = matches[0][1]
-                return best_expr._parse(instring, loc, doActions)
+                return ParseResults(self, [best_expr._parse(instring, loc, doActions)])
 
             longest = -1, None
             for loc1, expr1 in matches:
@@ -314,10 +316,10 @@ class Or(ParseExpression):
                         maxExcLoc = err.loc
                 else:
                     if loc2 >= loc1:
-                        return loc2, toks
+                        return loc2, ParseResults(self, [toks])
                     # didn't match as much as before
                     elif loc2 > longest[0]:
-                        longest = loc2, toks
+                        longest = loc2, ParseResults(self, [toks])
 
             if longest != (-1, None):
                 return longest
@@ -558,7 +560,7 @@ class Each(ParseExpression):
             loc, results = e._parse(instring, loc, doActions)
             resultlist.append(results)
 
-        finalResults = sum(resultlist, ParseResults.new_instance(self, []))
+        finalResults = sum(resultlist, ParseResults(self, []))
         return loc, finalResults
 
     def __str__(self):

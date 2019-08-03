@@ -420,13 +420,14 @@ class Optional(ParseElementEnhance):
         except (ParseException, IndexError):
             if self.defaultValue is not self.__optionalNotMatched:
                 if self.expr.resultsName:
-                    tokens = ParseResults.new_instance(self, [self.defaultValue])
+                    tokens = ParseResults(self, [self.defaultValue])
                     tokens[self.expr.resultsName] = self.defaultValue
                 else:
-                    tokens = [self.defaultValue]
+                    tokens = self.defaultValue
             else:
-                tokens = []
-        return loc, tokens
+                return loc, ParseResults(self, [])
+
+        return loc, ParseResults(self, [tokens])
 
     def __str__(self):
         if hasattr(self, "name"):
@@ -583,6 +584,9 @@ class Forward(ParseElementEnhance):
         super(Forward, self).__init__(other, savelist=False)
 
     def __lshift__(self, other):
+        if isinstance(other, Forward):
+            other = other.expr
+
         self.expr = self.normalize(other)
         self.strRepr = None
         self.mayIndexError = self.expr.mayIndexError

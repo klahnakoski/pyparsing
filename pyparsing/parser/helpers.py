@@ -737,7 +737,7 @@ def infixNotation(baseExpr, opList, lpar=Suppress('('), rpar=Suppress(')')):
     class _FB(FollowedBy):
         def parseImpl(self, instring, loc, doActions=True):
             self.expr.tryParse(instring, loc)
-            return loc, []
+            return loc, ParseResults(self, [])
 
     ret = Forward()
     lastExpr = baseExpr | (lpar + ret + rpar)

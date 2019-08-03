@@ -533,7 +533,7 @@ class Regex(Token):
             raise ParseException(instring, loc, self.errmsg, self)
 
         loc = result.end()
-        ret = ParseResults.new_instance(self, result.group())
+        ret = ParseResults(self, [result.group()])
         d = result.groupdict()
         if d:
             for k, v in d.items():
@@ -546,7 +546,7 @@ class Regex(Token):
             raise ParseException(instring, loc, self.errmsg, self)
 
         loc = result.end()
-        ret = result.groups()
+        ret = ParseResults(self, [result.groups()])
         return loc, ret
 
     def parseImplAsMatch(self, instring, loc, doActions=True):
@@ -555,7 +555,7 @@ class Regex(Token):
             raise ParseException(instring, loc, self.errmsg, self)
 
         loc = result.end()
-        ret = result
+        ret = ParseResults(self, [result])
         return loc, ret
 
     def __str__(self):
@@ -1004,9 +1004,9 @@ class StringEnd(_PositionToken):
         if loc < len(instring):
             raise ParseException(instring, loc, self.errmsg, self)
         elif loc == len(instring):
-            return loc + 1, []
+            return loc + 1, ParseResults(self, [])
         elif loc > len(instring):
-            return loc, []
+            return loc, ParseResults(self, [])
         else:
             raise ParseException(instring, loc, self.errmsg, self)
 

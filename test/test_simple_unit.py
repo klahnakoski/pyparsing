@@ -418,6 +418,8 @@ class TestTransformStringUsingParseActions(PyparsingExpressionTestCase):
             desc="Use transformString to convert simple markup to HTML",
             expr=(pp.oneOf(self.markup_convert_map)('markup_symbol')
                   + "(" + pp.CharsNotIn(")")('body') + ")").addParseAction(self.markup_convert),
+            #     0         1         2         3         4
+            #     01234567890123456789012345678901234567890123456789
             text="Show in *(bold), _(underscore), or /(italic) type",
             expected_list=['Show in <B>bold</B>, <U>underscore</U>, or <I>italic</I> type'],
             parse_fn='transformString',
