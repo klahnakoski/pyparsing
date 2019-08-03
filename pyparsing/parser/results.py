@@ -441,7 +441,8 @@ class ParseResults(object):
             # return open list of (k, list(v)) pairs
             if isinstance(obj, ParseResults):
                 name = get_name(obj)
-                if isinstance(obj, Annotation):
+
+                if isinstance(obj.type_for_result, Suppress):
                     # results not found in the original data
                     yield obj.name_for_result, obj.tokens_for_result
                 elif isinstance(obj.type_for_result, Group):

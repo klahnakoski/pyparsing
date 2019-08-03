@@ -4,6 +4,8 @@ from __future__ import absolute_import, division, unicode_literals
 import string
 import sys
 
+from mo_logs import Log
+
 try:
     # Python 3
     from itertools import filterfalse
@@ -52,7 +54,6 @@ if PY_3:
 
     def get_function_arguments(func):
         return func.__code__.co_varnames[:func.__code__.co_argcount]
-
 
 else:
     from __builtin__ import unicode
@@ -168,19 +169,28 @@ def line(loc, strg):
 
 # this version is Python 2.x-3.x cross-compatible
 'decorator to trim function calls to match the arity of the target'
-def _trim_arity(func, maxargs=2):
+def _trim_arity(func):
     if func in singleArgBuiltins:
         return lambda s, l, t: func(t)
 
-    f_args = get_function_arguments(func)
-    self_arg = 1 if f_args[0] == "self" else 0
-    start = 3 + self_arg - len(f_args)
+    if isinstance(func, type):
+        # use __init__., assume the self is already bound
+        func = func.__init__
+        f_args = get_function_arguments(func)
+        start = 2 - len(f_args)
+    else:
+        # use __call__, assume the self is already bound
+        f_args = get_function_arguments(func)
+        self_arg = 1 if f_args[0] == "self" else 0
+        start = 3 + self_arg - len(f_args)
 
     def wrapper(*args):
         try:
             ret = func(*args[start:])
             return ret
         except Exception as e:
+            if isinstance(e, TypeError) and f_args[0] == "self" and "required positional argument" in e.args[0]:
+                Log.error("Did you provide a `self` argument to a sgtatic function?", cause=e)
             from pyparsing import ParseException
             f = ParseException("function failed")
             f.__cause__ = e
