@@ -6,7 +6,7 @@ from weakref import ref as wkref
 
 from mo_logs import Log
 
-from pyparsing.utils import PY_3, _generatorType, _ustr, _xml_escape, basestring
+from pyparsing.utils import PY_3, _generatorType, _ustr, _xml_escape, basestring, __compat__
 
 Suppress, ParserElement, Forward, Group = [None]*4
 
@@ -17,7 +17,7 @@ def get_name(tok):
         if isinstance(tok, Forward):
             return tok.type_for_result.expr.resultsName
         if isinstance(tok, ParseResults):
-            return tok.type_for_result.resultsName
+            return _get(tok, "type_for_result").resultsName
         return None
     except Exception as e:
         raise e
@@ -87,20 +87,41 @@ class ParseResults(object):
         self.type_for_result = result_type
 
     def __getitem__(self, i):
-        if isinstance(i, (int, slice)):
-            if isinstance(self.type_for_result, Group):
-                return self.tokens_for_result[0][i]
+        if not __compat__.collect_all_And_tokens:
+            # pre 2.3
+            if isinstance(i, (int, slice)):
+                if isinstance(self.type_for_result, Group):
+                    return self.tokens_for_result[0][i]
+                else:
+                    for ii, v in enumerate(self):
+                        if i == ii:
+                            return v
+            elif self.name_for_result == i:
+                return self[0]
             else:
-                for ii, v in enumerate(self):
-                    if i == ii:
-                        return v
+                for tok in self.tokens_for_result:
+                    if get_name(tok) == i:
+                        return tok[0]
         else:
-            for tok in self.tokens_for_result:
-                if get_name(tok) == i:
-                    if len(tok) > 1:
-                        return tok
-                    else:
-                        return tok.tokens_for_result[0]
+            if isinstance(i, (int, slice)):
+                if isinstance(self.type_for_result, Group):
+                    return self.tokens_for_result[0][i]
+                else:
+                    for ii, v in enumerate(self):
+                        if i == ii:
+                            return v
+            elif get_name(self) == i:
+                if len(self) > 1:
+                    return self
+                else:
+                    return self.tokens_for_result[0]
+            else:
+                for tok in self.tokens_for_result:
+                    if get_name(tok) == i:
+                        if len(tok) > 1:
+                            return tok
+                        else:
+                            return tok.tokens_for_result[0]
 
     def __setitem__(self, k, v):
         if isinstance(k, (int, slice)):
@@ -672,16 +693,25 @@ class ParseResults(object):
 
     # add support for pickle protocol
     def __getstate__(self):
-        return (self.tokens_for_result,
-                (
-                 self.type_for_result,
-                 get_name(self)))
+        parser_type = self.type_for_result
+        name = parser_type.resultsName
+        type_name = parser_type.__class__.__name__
+        return self.tokens_for_result, type_name, name
 
     def __setstate__(self, state):
-        self.tokens_for_result, (self.type_for_result) = state
+        self.tokens_for_result, type_name, name = state
+        parser_type = globals().get(type_name, ParserElement)
+        parser_element = parser_type(None)
+        parser_element.resultsName = name
+
+        self.type_for_result = parser_element
 
     def __getnewargs__(self):
-        return self.type_for_result, self.tokens_for_result, get_name(self), self.__asList
+        old_parser = self.type_for_result
+        parser_type = globals().get(old_parser.__class__.__name__, ParserElement)
+        new_parser = parser_type(None)
+        new_parser.resultsName = old_parser.resultsName
+        return new_parser, self.tokens_for_result
 
     def __dir__(self):
         return dir(type(self)) + list(self.keys())

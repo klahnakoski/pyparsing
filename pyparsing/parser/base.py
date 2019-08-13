@@ -462,6 +462,8 @@ class ParserElement(object):
                         elif tokens is None:
                             # Assume tokens are kept
                             tokens = retTokens
+                        elif isinstance(tokens, object):
+                            tokens = ParseResults(self, [tokens])
                         else:
                             Log.error("not understood")
                     except IndexError as parse_action_exc:

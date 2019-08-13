@@ -1643,7 +1643,7 @@ class TestParseResultsPickleTest(TestCase):
                 pickleString = pickle.dumps(result, protocol)
             except Exception as e:
                 print_("dumps exception:", e)
-                newresult = ParseResults()
+                newresult = ParseResults(ParserElement(), [])
             else:
                 newresult = pickle.loads(pickleString)
                 if VERBOSE:

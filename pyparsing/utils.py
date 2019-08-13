@@ -175,9 +175,9 @@ def _trim_arity(func):
 
     if isinstance(func, type):
         # use __init__., assume the self is already bound
-        func = func.__init__
-        f_args = get_function_arguments(func)
-        start = 2 - len(f_args)
+        initfunc = func.__init__
+        f_args = get_function_arguments(initfunc)
+        start = 4 - len(f_args)
     else:
         # use __call__, assume the self is already bound
         f_args = get_function_arguments(func)

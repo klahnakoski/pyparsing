@@ -1,4 +1,5 @@
 # encoding: utf-8
+from copy import copy
 from datetime import datetime
 import re
 import warnings
@@ -510,7 +511,9 @@ def _makeTags(tagStr, xml,
 
     openTag.setName("<%s>" % resname)
     # add start<tagname> results name in parse action now that ungrouped names are not reported at two levels
-    openTag.addParseAction(lambda t: t.__setitem__("start" + "".join(resname.replace(":", " ").title().split()), t.copy()))
+    openTag.addParseAction(lambda t:
+                           t.__setitem__("start" + "".join(resname.replace(":", " ").title().split()), copy(t))
+                           )
     closeTag = closeTag("end" + "".join(resname.replace(":", " ").title().split())).setName("</%s>" % resname)
     openTag.tag = resname
     closeTag.tag = resname
