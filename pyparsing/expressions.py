@@ -211,10 +211,7 @@ class And(ParseExpression):
             if isinstance(exprtokens.type_for_result, Group):
                 acc.append(exprtokens)
             elif exprtokens.name_for_result:
-                if len(exprtokens) == 1:
-                    acc.append(exprtokens)
-                else:
-                    Log.error("do not know how to handle")
+                acc.append(exprtokens)
             else:
                 acc.extend(iter(exprtokens))
 
@@ -560,7 +557,7 @@ class Each(ParseExpression):
             loc, results = e._parse(instring, loc, doActions)
             resultlist.append(results)
 
-        finalResults = sum(resultlist, ParseResults(self, []))
+        finalResults = ParseResults(self, resultlist)
         return loc, finalResults
 
     def __str__(self):

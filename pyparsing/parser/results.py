@@ -1,5 +1,6 @@
 # encoding: utf-8
 from collections import Mapping, MutableMapping
+from copy import copy
 from itertools import count
 from pprint import pprint
 from weakref import ref as wkref
@@ -352,6 +353,7 @@ class ParseResults(object):
         """
         Clear all elements and results names.
         """
+        Log.error("not expected")
         del self.tokens_for_result[:]
 
     def __getattr__(self, name):
@@ -361,11 +363,13 @@ class ParseResults(object):
             return ""
 
     def __add__(self, other):
+        Log.error("not expected")
         ret = copy(self)
         ret += other
         return ret
 
     def __iadd__(self, other):
+        Log.error("not expected")
         # safe to collapse
         if isinstance(other, list):
             Log.error("not expected")
@@ -389,6 +393,7 @@ class ParseResults(object):
         return self
 
     def __radd__(self, other):
+        Log.error("not expected")
         if isinstance(other, int) and other == 0:
             # useful for merging many ParseResults using sum() builtin
             return self.copy()

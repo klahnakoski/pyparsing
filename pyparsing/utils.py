@@ -52,8 +52,13 @@ if PY_3:
     # build list of single arg builtins, that can be used as parse actions
     singleArgBuiltins = [sum, len, sorted, reversed, list, tuple, set, any, all, min, max]
 
+    builtin_lookup = {"".join.__name__: ("iterable",)}
+
     def get_function_arguments(func):
-        return func.__code__.co_varnames[:func.__code__.co_argcount]
+        try:
+            return func.__code__.co_varnames[:func.__code__.co_argcount]
+        except Exception as e:
+            return builtin_lookup.get(func.__name__, ("unknown",))
 
 else:
     from __builtin__ import unicode
