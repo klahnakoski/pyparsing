@@ -970,11 +970,11 @@ class LineEnd(_PositionToken):
     def parseImpl(self, instring, loc, doActions=True):
         if loc < len(instring):
             if instring[loc] == "\n":
-                return loc + 1, "\n"
+                return loc + 1, ParseResults(self, ["\n"])
             else:
                 raise ParseException(instring, loc, self.errmsg, self)
         elif loc == len(instring):
-            return loc + 1, []
+            return loc + 1, ParseResults(self, [])
         else:
             raise ParseException(instring, loc, self.errmsg, self)
 

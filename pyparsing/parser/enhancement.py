@@ -1,6 +1,8 @@
 # encoding: utf-8
 import warnings
 
+from mo_logs import Log
+
 from pyparsing.exceptions import ParseBaseException, ParseException, RecursiveGrammarException
 from pyparsing.parser.base import ParserElement, __diag__
 from pyparsing.parser.results import ParseResults, Annotation
@@ -38,7 +40,10 @@ class ParseElementEnhance(ParserElement):
 
     def parseImpl(self, instring, loc, doActions=True):
         if self.expr is not None:
-            return self.expr._parse(instring, loc, doActions, callPreParse=False)
+            loc, output = self.expr._parse(instring, loc, doActions, callPreParse=False)
+            if output.type_for_result == self:
+                Log.error("not expected")
+            return loc, ParseResults(self, [output])
         else:
             raise ParseException("", loc, self.errmsg, self)
 
@@ -623,6 +628,15 @@ class Forward(ParseElementEnhance):
             if self.expr is not None:
                 self.expr.validate(tmp)
         self.checkRecursion([])
+
+    def parseImpl(self, instring, loc, doActions=True):
+        if self.expr is not None:
+            loc, output = self.expr._parse(instring, loc, doActions, callPreParse=False)
+            if output.type_for_result is self:
+                Log.error("not expected")
+            return loc, output
+        else:
+            raise ParseException("", loc, self.errmsg, self)
 
     def __str__(self):
         if hasattr(self, "name"):
