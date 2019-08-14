@@ -90,7 +90,7 @@ class ParseResults(object):
     def __getitem__(self, i):
         if not __compat__.collect_all_And_tokens:
             # pre 2.3
-            if isinstance(i, (int, slice)):
+            if isinstance(i, int):
                 if isinstance(self.type_for_result, Group):
                     return self.tokens_for_result[0][i]
                 else:
@@ -104,7 +104,7 @@ class ParseResults(object):
                     if get_name(tok) == i:
                         return tok[0]
         else:
-            if isinstance(i, (int, slice)):
+            if isinstance(i, int):
                 if isinstance(self.type_for_result, Group):
                     return self.tokens_for_result[0][i]
                 else:
@@ -155,14 +155,12 @@ class ParseResults(object):
     __nonzero__ = __bool__
 
     def __iter__(self):
-        if isinstance(self.type_for_result, Suppress):
+        if isinstance(self, Annotation):
+            yield self
+        elif isinstance(self.type_for_result, Suppress):
             return
         elif isinstance(self.type_for_result, Group):
-            yield [
-                mm
-                for r in self.tokens_for_result
-                for mm in (r if isinstance(r, ParseResults) else [r])
-            ]
+            yield self
         else:
             for r in self.tokens_for_result:
                 if isinstance(r, ParseResults):
@@ -463,41 +461,46 @@ class ParseResults(object):
             print(json.dumps(result)) # -> Exception: TypeError: ... is not JSON serializable
             print(json.dumps(result.asDict())) # -> {"month": "31", "day": "1999", "year": "12"}
         """
-        def toItem(obj):
+        def items(obj):
             # return open list of (k, list(v)) pairs
             if isinstance(obj, ParseResults):
                 name = get_name(obj)
 
-                if isinstance(obj.type_for_result, Suppress):
-                    # results not found in the original data
-                    yield obj.name_for_result, obj.tokens_for_result
+                if name:
+                    yield name, pack(obj.tokens_for_result)
                 elif isinstance(obj.type_for_result, Group):
-                    yield name, [obj.asList()]
-                elif name:
-                    yield name, obj.asList()
+                    yield None, pack(obj.tokens_for_result)
+                elif isinstance(obj.type_for_result, Suppress):
+                    # results not found in the original data
+                    return
                 else:
                     for tok in obj.tokens_for_result:
-                        for p in toItem(tok):
+                        for p in items(tok):
                             yield p
             else:
                 yield None, [obj]
 
-        acc = []
-        d = {}
-        for k, v in toItem(self):
-            if k is not None:
-                old_v = d.get(k)
-                if old_v is None:
-                    d[k] = v
-                elif isinstance(old_v, list):
-                    old_v.extend(v)
-            acc.append(v)
-        if d:
-            for k, v in list(d.items()):
-                d[k] = v if len(v) > 1 else v[0]
-            return d
-        else:
-            return acc
+        def pack(objs):
+            acc = []
+            d = {}
+            for t in objs:
+                for k, v in items(t):
+                    if k is not None:
+                        old_v = d.get(k)
+                        if old_v is None:
+                            d[k] = v
+                        elif isinstance(old_v, list):
+                            old_v.extend(v)
+                    acc.extend(v)
+            if d:
+                return [{k: simpler(v) for k, v in d.items()}]
+            else:
+                return acc
+
+        def simpler(v):
+            return v if len(v) > 1 else v[0]
+
+        return simpler(pack([self]))
 
     def __copy__(self):
         """
@@ -756,6 +759,9 @@ class Annotation(ParseResults):
 
     def __init__(self, name, value):
         ParseResults.__init__(self, Suppress(None)(name), [value])
+
+    def __str__(self):
+        return "{" + get_name(self) + ": " + self.tokens_for_result[0] + "}"
 
 
 MutableMapping.register(ParseResults)

@@ -295,8 +295,9 @@ class Or(ParseExpression):
             if not doActions:
                 # no further conditions or parse actions to change the selection of
                 # alternative, so the first match will be the best match
-                best_expr = matches[0][1]
-                return ParseResults(self, [best_expr._parse(instring, loc, doActions)])
+                _, best_expr = matches[0]
+                loc, best_results = best_expr._parse(instring, loc, doActions)
+                return loc, ParseResults(self, [best_results])
 
             longest = -1, None
             for loc1, expr1 in matches:

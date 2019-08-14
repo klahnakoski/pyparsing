@@ -748,7 +748,7 @@ class Group(TokenConverter):
     def postParse(self, instring, loc, tokenlist):
         return ParseResults(self, [tokenlist])
 
-class Dict(TokenConverter):
+class Dict(Group):
     """Converter to return a repetitive expression as a list, but also
     as a dictionary. Each element can also be referenced using the first
     token in the expression as its key. Useful for tabular report
@@ -793,16 +793,13 @@ class Dict(TokenConverter):
 
     def postParse(self, instring, loc, tokenlist):
         acc = tokenlist.tokens_for_result
-        for i, tok in list(enumerate(acc)):
+        for tok in list(acc):
             if len(tok) == 0:
                 continue
+
             ikey = tok[0]
-            if len(tok) == 1:
-                new_tok = Annotation(ikey, "")
-            elif len(tok) == 2 and not isinstance(tok[1], ParseResults):
-                new_tok = Annotation(ikey, tok[1])
-            else:
-                new_tok = Annotation(ikey, list(tok[1]))
+            rest = tok[1]
+            new_tok = Annotation(ikey, rest)
             acc.append(new_tok)
 
         return ParseResults(self, acc)
