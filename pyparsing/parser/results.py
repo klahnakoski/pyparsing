@@ -159,11 +159,9 @@ class ParseResults(object):
             yield self
         elif isinstance(self.type_for_result, Suppress):
             return
-        elif isinstance(self.type_for_result, Group):
-            yield self
         else:
             for r in self.tokens_for_result:
-                if isinstance(r, ParseResults):
+                if isinstance(r, ParseResults) and not isinstance(r.type_for_result, Group):
                     for mm in r:
                         yield mm
                 else:
@@ -400,7 +398,11 @@ class ParseResults(object):
             return other + self
 
     def __repr__(self):
-        return repr(self.tokens_for_result)
+        try:
+            return repr(self.tokens_for_result)
+        except Exception as e:
+            Log.warning("problem", cause=e)
+            return "[]"
 
     def __str__(self):
         # if len(self.tokens_for_result) == 1:
@@ -435,11 +437,31 @@ class ParseResults(object):
             result_list = result.asList()
             print(type(result_list), result_list) # -> <class 'list'> ['sldkj', 'lsdkj', 'sldkj']
         """
-        output = list(self)
-        if isinstance(self.type_for_result, Group):
-            return output
-        else:
-            return output
+
+        def internal(obj, depth):
+            if depth > 20:
+                Log.warning("deep!")
+
+            if isinstance(obj, Annotation):
+                return []
+            elif isinstance(obj, ParseResults):
+                output = []
+                for t in obj:
+                    inner = internal(t, depth+1)
+                    if len(inner) == 0:
+                        pass
+                    elif len(inner) == 1:
+                        output.append(inner[0])
+                    else:
+                        output.append(inner)
+                if isinstance(obj.type_for_result, Group):
+                    return [output]
+                else:
+                    return output
+            else:
+                return [obj]
+
+        return internal(self, 0)
 
     def asDict(self):
         """
@@ -466,10 +488,10 @@ class ParseResults(object):
             if isinstance(obj, ParseResults):
                 name = get_name(obj)
 
-                if name:
+                if isinstance(obj.type_for_result, Group):
+                    yield name, [pack(obj.tokens_for_result)]
+                elif name:
                     yield name, pack(obj.tokens_for_result)
-                elif isinstance(obj.type_for_result, Group):
-                    yield None, pack(obj.tokens_for_result)
                 elif isinstance(obj.type_for_result, Suppress):
                     # results not found in the original data
                     return
@@ -481,24 +503,25 @@ class ParseResults(object):
                 yield None, [obj]
 
         def pack(objs):
-            acc = []
-            d = {}
+            # return a dict, if possible
+            # otherwise return an open list
+            output_list = []
+            output_dict = {}
             for t in objs:
                 for k, v in items(t):
                     if k is not None:
-                        old_v = d.get(k)
+                        old_v = output_dict.get(k)
                         if old_v is None:
-                            d[k] = v
+                            output_dict[k] = v
                         elif isinstance(old_v, list):
                             old_v.extend(v)
-                    acc.extend(v)
-            if d:
-                return [{k: simpler(v) for k, v in d.items()}]
-            else:
-                return acc
+                    output_list.extend(v)
 
-        def simpler(v):
-            return v if len(v) > 1 else v[0]
+            if output_dict:
+                # return output_dict
+                return [{k: simpler(v) for k, v in output_dict.items()}]
+            else:
+                return output_list
 
         return simpler(pack([self]))
 
@@ -628,6 +651,8 @@ class ParseResults(object):
             - month: 31
             - year: 12
         """
+        if _depth > 20:
+            Log.warning("not expected")
         out = []
         NL = '\n'
         if include_list:
@@ -652,7 +677,9 @@ class ParseResults(object):
             elif any(isinstance(vv, ParseResults) for vv in self):
                 v = self
                 for i, vv in enumerate(v):
-                    if isinstance(vv, ParseResults):
+                    if isinstance(vv, Annotation):
+                        pass
+                    elif isinstance(vv, ParseResults):
                         out.append("\n%s%s[%d]:\n%s%s%s" % (indent,
                                                             ('  ' * (_depth)),
                                                             i,
@@ -753,6 +780,16 @@ class ParseResults(object):
         return ret
 
 
+def simpler(v):
+    # convert an open list to object it represents
+    if isinstance(v, list):
+        if len(v) == 0:
+            return None
+        elif len(v) == 1:
+            return v[0]
+    return v
+
+
 class Annotation(ParseResults):
     # Append one of these to the parse results to
     # add key: value pair not found in the original text
@@ -760,8 +797,8 @@ class Annotation(ParseResults):
     def __init__(self, name, value):
         ParseResults.__init__(self, Suppress(None)(name), [value])
 
-    def __str__(self):
-        return "{" + get_name(self) + ": " + self.tokens_for_result[0] + "}"
+    def __repr__(self):
+        return "{" + get_name(self) + ": ...}"
 
 
 MutableMapping.register(ParseResults)

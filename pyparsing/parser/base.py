@@ -208,6 +208,8 @@ class ParserElement(object):
 
     def _setResultsName(self, name, listAllMatches=False):
         newself = self.copy()
+        if not isinstance(name, str):
+            Log.error("not expected")
         if name.endswith("*"):
             name = name[:-1]
             listAllMatches = True

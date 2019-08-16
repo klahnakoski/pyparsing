@@ -760,7 +760,10 @@ class Group(TokenConverter):
         self.saveAsList = True
 
     def postParse(self, instring, loc, tokenlist):
-        return ParseResults(self, [tokenlist])
+        if tokenlist.type_for_result is not self:
+            Log.error("please wrap")
+
+        return tokenlist
 
 class Dict(Group):
     """Converter to return a repetitive expression as a list, but also
@@ -807,7 +810,7 @@ class Dict(Group):
 
     def postParse(self, instring, loc, tokenlist):
         acc = tokenlist.tokens_for_result
-        for tok in list(acc):
+        for tok in list(iter(tokenlist)):
             if len(tok) == 0:
                 continue
 
