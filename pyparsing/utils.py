@@ -196,7 +196,7 @@ def _trim_arity(func):
         except Exception as e:
             if isinstance(e, TypeError) and f_args[0] == "self" and "required positional argument" in e.args[0]:
                 Log.error("Did you provide a `self` argument to a sgtatic function?", cause=e)
-            Log.warning("function failure", cause=e)
+            # Log.warning("function failure", cause=e)
             from pyparsing import ParseException
             f = ParseException("function failed")
             f.__cause__ = e

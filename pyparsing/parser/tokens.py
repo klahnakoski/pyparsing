@@ -1029,7 +1029,7 @@ class WordStart(_PositionToken):
             if (instring[loc - 1] in self.wordChars
                     or instring[loc] not in self.wordChars):
                 raise ParseException(instring, loc, self.errmsg, self)
-        return loc, []
+        return loc, ParseResults(self, [])
 
 class WordEnd(_PositionToken):
     """Matches if the current position is at the end of a Word, and is
@@ -1051,7 +1051,7 @@ class WordEnd(_PositionToken):
             if (instring[loc] in self.wordChars or
                     instring[loc - 1] not in self.wordChars):
                 raise ParseException(instring, loc, self.errmsg, self)
-        return loc, []
+        return loc, ParseResults(self, [])
 
 
 # export

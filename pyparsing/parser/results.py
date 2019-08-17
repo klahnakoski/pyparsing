@@ -387,6 +387,9 @@ class ParseResults(object):
         Log.error("not expected")
         del self.tokens_for_result[:]
 
+    def __contains__(self, item):
+        return self[item] is not None
+
     def __getattr__(self, name):
         try:
             return self[name]
@@ -825,19 +828,6 @@ class Annotation(ParseResults):
 
     def __repr__(self):
         return "{" + get_name(self) + ": ...}"
-
-    def __lt__(self, other):
-        if isinstance(other, ParseResults):
-            other = other[0]
-        return self.tokens_for_result[0] < other
-
-    def __gt__(self, other):
-        if isinstance(other, ParseResults):
-            other = other[0]
-        return self.tokens_for_result[0] > other
-
-
-
 
 
 MutableMapping.register(ParseResults)
