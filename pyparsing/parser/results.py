@@ -190,7 +190,8 @@ class ParseResults(object):
 
     def __iter__(self):
         if isinstance(self, Annotation):
-            yield self
+            return
+            # yield self
         elif isinstance(self.type_for_result, Suppress):
             return
         else:
@@ -421,15 +422,6 @@ class ParseResults(object):
         else:
             self.tokens_for_result.append(other)
         return self
-
-    def __radd__(self, other):
-        Log.error("not expected")
-        if isinstance(other, int) and other == 0:
-            # useful for merging many ParseResults using sum() builtin
-            return self.copy()
-        else:
-            # this may raise a TypeError - so be it
-            return other + self
 
     def __repr__(self):
         try:
@@ -833,6 +825,19 @@ class Annotation(ParseResults):
 
     def __repr__(self):
         return "{" + get_name(self) + ": ...}"
+
+    def __lt__(self, other):
+        if isinstance(other, ParseResults):
+            other = other[0]
+        return self.tokens_for_result[0] < other
+
+    def __gt__(self, other):
+        if isinstance(other, ParseResults):
+            other = other[0]
+        return self.tokens_for_result[0] > other
+
+
+
 
 
 MutableMapping.register(ParseResults)
