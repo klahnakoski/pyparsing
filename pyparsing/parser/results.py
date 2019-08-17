@@ -87,6 +87,28 @@ class ParseResults(object):
         self.tokens_for_result = toklist
         self.type_for_result = result_type
 
+    def _get_item_by_name(self, i):
+        # return open list of values
+        if not __compat__.collect_all_And_tokens:
+            # pre 2.3
+            if self.name_for_result == i:
+                yield self[0]
+            else:
+                for tok in self.tokens_for_result:
+                    if get_name(tok) == i:
+                        yield tok[0]
+        else:
+            if get_name(self) == i:
+                if len(self.tokens_for_result) == 1:
+                    yield self.tokens_for_result[0]
+                    return
+                yield self
+            else:
+                for tok in self.tokens_for_result:
+                    if isinstance(tok, ParseResults):
+                        for f in tok._get_item_by_name(i):
+                            yield f
+
     def __getitem__(self, i):
         if not __compat__.collect_all_And_tokens:
             # pre 2.3
@@ -111,22 +133,34 @@ class ParseResults(object):
                     for ii, v in enumerate(self):
                         if i == ii:
                             return v
-            elif get_name(self) == i:
-                if len(self) > 1:
-                    return self
-                else:
-                    return self.tokens_for_result[0]
             else:
-                for tok in self.tokens_for_result:
-                    if get_name(tok) == i:
-                        if len(tok) > 1:
-                            return tok
-                        else:
-                            return tok.tokens_for_result[0]
+                output = list(self._get_item_by_name(i))
+                if len(output) == 0:
+                    return None
+                elif len(output) == 1:
+                    return output[0]
+                else:
+                    return ParseResults(self.type_for_result, output)
+        # Log.error("No name by {{name|quote}}", name=i)
 
     def __setitem__(self, k, v):
         if isinstance(k, (int, slice)):
-            self.tokens_for_result[k] = v
+            for i, t in enumerate(self.tokens_for_result):
+                if isinstance(t, ParseResults):
+                    ii = len(t)
+                    if k < ii:
+                        t[k] = v
+                        return
+                    else:
+                        k -= ii
+                else:
+                    if k==0:
+                        self.tokens_for_result[i] = v
+                        return
+                    else:
+                        k-=1
+
+            Log.error("index {{index}} beyond existing tokens", index=k)
         else:
             for i, vv in enumerate(self.tokens_for_result):
                 if get_name(vv) == k:
@@ -148,7 +182,7 @@ class ParseResults(object):
         if isinstance(self.type_for_result, Group):
             return len(self.tokens_for_result[0])
         else:
-            return sum(1 for t in self.tokens_for_result if not isinstance(t, Annotation))
+            return sum(1 for t in self)
 
     def __bool__(self):
         return (not not self.tokens_for_result)

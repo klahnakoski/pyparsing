@@ -299,7 +299,9 @@ def originalTextFor(expr, asString=True):
         ['<b> bold <i>text</i> </b>']
         ['<i>text</i>']
     """
-    locMarker = Empty().setParseAction(lambda s, loc, t: loc)
+    locMarker = Empty().setParseAction(
+        lambda s, loc, t: loc
+    )
     endlocMarker = locMarker.copy()
     endlocMarker.callPreparse = False
     matchExpr = locMarker("_original_start") + expr + endlocMarker("_original_end")

@@ -208,12 +208,7 @@ class And(ParseExpression):
 
             if not isinstance(exprtokens, ParseResults):
                 Log.error("expecting {{type}} to emit parseresults", type=e.__class__.__name__)
-            if isinstance(exprtokens.type_for_result, Group):
-                acc.append(exprtokens)
-            elif exprtokens.name_for_result:
-                acc.append(exprtokens)
-            else:
-                acc.extend(iter(exprtokens))
+            acc.append(exprtokens)
 
         return loc, ParseResults(self, acc)
 
