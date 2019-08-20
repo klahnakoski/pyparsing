@@ -186,7 +186,7 @@ def _trim_arity(func):
     else:
         # use __call__, assume the self is already bound
         f_args = get_function_arguments(func)
-        self_arg = 1 if f_args[0] == "self" else 0
+        self_arg = 1 if f_args and f_args[0] == "self" else 0
         start = 3 + self_arg - len(f_args)
 
     def wrapper(*args):

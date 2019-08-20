@@ -127,12 +127,9 @@ class ParseResults(object):
                         return tok[0]
         else:
             if isinstance(i, int):
-                if isinstance(self.type_for_result, Group):
-                    return self.tokens_for_result[0][i]
-                else:
-                    for ii, v in enumerate(self):
-                        if i == ii:
-                            return v
+                for ii, v in enumerate(self):
+                    if i == ii:
+                        return v
             else:
                 output = list(self._get_item_by_name(i))
                 if len(output) == 0:
@@ -196,7 +193,9 @@ class ParseResults(object):
             return
         else:
             for r in self.tokens_for_result:
-                if isinstance(r, ParseResults) and not isinstance(r.type_for_result, Group):
+                if get_name(r):
+                    yield r
+                elif isinstance(r, ParseResults) and not isinstance(r.type_for_result, Group):
                     for mm in r:
                         yield mm
                 else:
@@ -567,7 +566,6 @@ class ParseResults(object):
         """
         nl = "\n"
         out = []
-        namedItems = dict((i, get_name(r)) for i, r in enumerate(self.tokens_for_result) if get_name(r))
         nextLevelIndent = indent + "  "
 
         # collapse out indents if formatting is not desired
@@ -591,32 +589,27 @@ class ParseResults(object):
 
         out += [nl, indent, "<", selfTag, ">"]
 
-        for i, res in enumerate(self.tokens_for_result):
+        for res in self:
             if isinstance(res, ParseResults):
-                if i in namedItems:
-                    out += [res.asXML(namedItems[i],
-                                      namedItemsOnly and doctag is None,
-                                      nextLevelIndent,
-                                      formatted)]
-                else:
-                    out += [res.asXML(None,
-                                      namedItemsOnly and doctag is None,
-                                      nextLevelIndent,
-                                      formatted)]
+                name = get_name(res)
+                out += [res.asXML(name,
+                                  namedItemsOnly and doctag is None,
+                                  nextLevelIndent,
+                                  formatted)]
             else:
                 # individual token, see if there is a name for it
-                resTag = None
-                if i in namedItems:
-                    resTag = namedItems[i]
-                if not resTag:
-                    if namedItemsOnly:
-                        continue
-                    else:
-                        resTag = "ITEM"
+                if namedItemsOnly:
+                    continue
+
+                resTag = "ITEM"
                 xmlBodyText = _xml_escape(_ustr(res))
-                out += [nl, nextLevelIndent, "<", resTag, ">",
-                        xmlBodyText,
-                                                "</", resTag, ">"]
+                out += [
+                    nl,
+                    nextLevelIndent,
+                    "<", resTag, ">",
+                    xmlBodyText,
+                    "</", resTag, ">"
+                ]
 
         out += [nl, indent, "</", selfTag, ">"]
         return "".join(out)
@@ -822,6 +815,8 @@ def simpler(v):
 class Annotation(ParseResults):
     # Append one of these to the parse results to
     # add key: value pair not found in the original text
+
+    __slots__=[]
 
     def __init__(self, name, value):
         ParseResults.__init__(self, Suppress(None)(name), [value])

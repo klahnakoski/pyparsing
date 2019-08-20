@@ -127,9 +127,10 @@ class FollowedBy(ParseElementEnhance):
     def parseImpl(self, instring, loc, doActions=True):
         # by using self._expr.parse and deleting the contents of the returned ParseResults list
         # we keep any named results that were defined in the FollowedBy expression
-        self.expr._parse(instring, loc, doActions=doActions)
+        loc, result = self.expr._parse(instring, loc, doActions=doActions)
+        result.__class__ = Annotation
 
-        return loc, ParseResults(self, [])
+        return loc, ParseResults(self, [result])
 
 
 class PrecededBy(ParseElementEnhance):

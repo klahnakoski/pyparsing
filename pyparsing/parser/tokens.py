@@ -955,7 +955,7 @@ class LineStart(_PositionToken):
 
     def parseImpl(self, instring, loc, doActions=True):
         if col(loc, instring) == 1:
-            return loc, []
+            return loc, ParseResults(self, [])
         raise ParseException(instring, loc, self.errmsg, self)
 
 class LineEnd(_PositionToken):
