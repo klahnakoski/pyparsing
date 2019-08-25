@@ -564,54 +564,49 @@ class ParseResults(object):
         """
         (Deprecated) Returns the parse results as XML. Tags are created for tokens and lists that have defined results names.
         """
-        nl = "\n"
-        out = []
-        nextLevelIndent = indent + "  "
-
-        # collapse out indents if formatting is not desired
-        if not formatted:
+        if formatted:
+            more_indent = "  "
+            nl = "\n"
+        else:
             indent = ""
-            nextLevelIndent = ""
+            more_indent = ""
             nl = ""
 
-        selfTag = None
-        if doctag is not None:
-            selfTag = doctag
-        else:
-            if get_name(self):
-                selfTag = get_name(self)
+        no_name = "ITEM"
 
-        if not selfTag:
-            if namedItemsOnly:
-                return ""
+        def toXML(tag, token, namedItemsOnly, indent):
+            """ return open iterator of not-indented tags """
+            if isinstance(token, ParseResults):
+                name = get_name(token)
+                if isinstance(token.type_for_result, Group):
+                    yield token.asXML(name or tag, not name, indent, formatted)
+                elif name:
+                    yield nl + indent + "<" + name + ">"
+                    for sub_tok in token.tokens_for_result:
+                        for x in toXML(None, sub_tok, False, indent+more_indent):
+                            yield x
+                    yield "</" + name + ">"
+                else:
+                    for sub_tok in token.tokens_for_result:
+                        for x in toXML(tag, sub_tok, namedItemsOnly, indent):
+                            yield x
+            elif tag is no_name and namedItemsOnly:
+                return
+            elif tag:
+                yield nl + indent + "<" + tag + ">"
+                yield _xml_escape(_ustr(token))
+                yield "</" + tag + ">"
             else:
-                selfTag = "ITEM"
+                yield _xml_escape(_ustr(token))
 
-        out += [nl, indent, "<", selfTag, ">"]
+        name = doctag or get_name(self) or no_name
 
-        for res in self:
-            if isinstance(res, ParseResults):
-                name = get_name(res)
-                out += [res.asXML(name,
-                                  namedItemsOnly and doctag is None,
-                                  nextLevelIndent,
-                                  formatted)]
-            else:
-                # individual token, see if there is a name for it
-                if namedItemsOnly:
-                    continue
+        out = []
+        out.append(nl + indent + "<" + name + ">")
+        for sub_tok in self.tokens_for_result:
+            out.extend(toXML(no_name, sub_tok, namedItemsOnly, indent+more_indent))
+        out.append( nl + indent + "</" + name + ">")
 
-                resTag = "ITEM"
-                xmlBodyText = _xml_escape(_ustr(res))
-                out += [
-                    nl,
-                    nextLevelIndent,
-                    "<", resTag, ">",
-                    xmlBodyText,
-                    "</", resTag, ">"
-                ]
-
-        out += [nl, indent, "</", selfTag, ">"]
         return "".join(out)
 
     def __lookup(self, sub):

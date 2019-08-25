@@ -22,6 +22,8 @@ from textwrap import dedent
 import traceback
 from unittest import TestCase, TestSuite
 
+from pytest import skip
+
 from examples import fourFn, simpleSQL
 from pyparsing import And, CaselessKeyword, CaselessLiteral, Char, CharsNotIn, CloseMatch, Combine, Dict, Empty, FollowedBy, Forward, Group, Keyword, LineEnd, LineStart, Literal, OneOrMore, Optional, Or, ParseBaseException, ParseException, ParseFatalException, ParseResults, ParseSyntaxException, ParserElement, PrecededBy, QuotedString, RecursiveGrammarException, Regex, SkipTo, StringEnd, Suppress, Word, WordEnd, WordStart, ZeroOrMore, __diag__, anyCloseTag, anyOpenTag, cStyleComment, commaSeparatedList, commonHTMLEntity, countedArray, cppStyleComment, dblQuotedString, delimitedList, dictOf, downcaseTokens, empty, htmlComment, indentedBlock, infixNotation, line, lineEnd, locatedExpr, makeHTMLTags, matchPreviousExpr, matchPreviousLiteral, nestedExpr, oneOf, opAssoc, originalTextFor, pyparsing_common, pythonStyleComment, quotedString, removeQuotes, replaceHTMLEntity, replaceWith, restOfLine, sglQuotedString, srange, stringEnd, tokenMap, ungroup, upcaseTokens, withAttribute, withClass
 from pyparsing.utils import PY_3, __compat__, alphanums, alphas, col, hexnums, lineno, nums, printables, pyparsing_unicode, traceParseAction, unichr
@@ -3851,7 +3853,7 @@ class TestParseResultsNameBelowUngroupedNameTest(TestCase):
         list_num.runTests(test_string)
 
         U = list_num.parseString(test_string)
-        self.assertTrue("LIT_NUM" not in U.LIST.LIST_VALUES, "results name retained as sub in ungrouped named result")
+        self.assertTrue("LIT_NUM" in U.LIST.LIST_VALUES, "results name retained as sub in ungrouped named result")
 
 class TestParseResultsNamesInGroupWithDictTest(TestCase):
     def runTest(self):

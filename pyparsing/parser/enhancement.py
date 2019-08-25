@@ -588,22 +588,16 @@ class Forward(ParseElementEnhance):
     """
     def __init__(self, other=None):
         super(Forward, self).__init__(other, savelist=False)
+        self.expr = None
 
     def __lshift__(self, other):
-        if isinstance(other, Forward):
+        while isinstance(other, Forward):
             other = other.expr
 
         self.expr = self.normalize(other)
-        self.strRepr = None
-        self.mayIndexError = self.expr.mayIndexError
-        self.mayReturnEmpty = self.expr.mayReturnEmpty
-        self.setWhitespaceChars(self.expr.whiteChars)
-        self.skipWhitespace = self.expr.skipWhitespace
-        self.saveAsList = self.expr.saveAsList
-        self.ignoreExprs.extend(self.expr.ignoreExprs)
 
         if self.resultsName:
-            other(self.resultsName)
+            self.expr(self.resultsName)
         return self
 
     def __ilshift__(self, other):
@@ -736,10 +730,7 @@ class Combine(TokenConverter):
     def postParse(self, instring, loc, tokenlist):
         retToks = ParseResults(self, [tokenlist.asString(sep=self.joinString)])
 
-        if self.resultsName and retToks.haskeys():
-            return [retToks]
-        else:
-            return retToks
+        return retToks
 
 class Group(TokenConverter):
     """Converter to return the matched tokens as a list - useful for
