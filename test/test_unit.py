@@ -1958,8 +1958,8 @@ class TestPrecededByTest(TestCase):
             (very_boring_num, [404], {}),
             ]:
             print_(expr.searchString(s))
-            result = sum(expr.searchString(s))
-            print_(result)
+            result = expr.searchString(s)
+            print_(sum(result))
 
             self.assertEqual(result.asList(), expected_list,
                              "Erroneous tokens for {0}: expected {1}, got {2}".format(expr,

@@ -193,13 +193,57 @@ class ParseResults(object):
             return
         else:
             for r in self.tokens_for_result:
-                if get_name(r):
-                    yield r
-                elif isinstance(r, ParseResults) and not isinstance(r.type_for_result, Group):
-                    for mm in r:
-                        yield mm
+                if isinstance(r, ParseResults):
+                    if isinstance(r, Annotation):
+                        return
+                    elif isinstance(r.type_for_result, Group):
+                        yield r
+                    # elif get_name(r):
+                    #     yield r
+                    elif not isinstance(r.type_for_result, Group):
+                        for mm in r:
+                            yield mm
                 else:
                     yield r
+
+    def __delitem__(self, key):
+        if isinstance(key, int):
+            if key==-1:
+                # DELETE LEFT OR RIGHT
+                if not self.tokens_for_result:
+                    Log.error("not expected")
+                first = self.tokens_for_result[0]
+                if isinstance(first, ParseResults):
+                    if isinstance(first.type_for_result, Group):
+                        self.tokens_for_result = self.tokens_for_result[1:]
+                        return
+                    else:
+                        del first[-1]
+                        return
+                else:
+                    self.tokens_for_result = self.tokens_for_result[1:]
+                    return
+
+            elif key == 0:
+                if isinstance(self.type_for_result, Group):
+                    del self.tokens_for_result[0][0]
+                    return
+                del self[-1]
+                return
+            else:
+                for t in self.tokens_for_result:
+                    if key < len(t):
+                        del t[key]
+                        return
+                    key -= len(t)
+        else:
+            for i, t in enumerate(self.tokens_for_result):
+                if get_name(t)==key:
+                    del self.tokens_for_result[i]
+                    return
+            for t in self:
+                del t[key]
+
 
     def __reversed__(self):
         return reversed(self.tokens_for_result)
