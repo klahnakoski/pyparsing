@@ -511,9 +511,9 @@ class Forward(ParseElementEnhance):
     See :class:`ParseResults.pprint` for an example of a recursive
     parser created using ``Forward``.
     """
-    def __init__(self, other=None):
-        super(Forward, self).__init__(other, savelist=False)
-        self.expr = None
+    def __init__(self, expr=None):
+        super(Forward, self).__init__(expr, savelist=False)
+        self.expr = expr
 
     def __lshift__(self, other):
         while isinstance(other, Forward):
