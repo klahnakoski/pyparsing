@@ -1,6 +1,7 @@
 # encoding: utf-8
 from __future__ import absolute_import, division, unicode_literals
 
+import inspect
 import string
 import sys
 
@@ -172,30 +173,44 @@ def line(loc, strg):
         return strg[lastCR + 1:]
 
 
-# this version is Python 2.x-3.x cross-compatible
 'decorator to trim function calls to match the arity of the target'
 def _trim_arity(func):
     if func in singleArgBuiltins:
         return lambda s, l, t: func(t)
 
-    if isinstance(func, type):
-        # use __init__., assume the self is already bound
-        initfunc = func.__init__
-        f_args = get_function_arguments(initfunc)
-        start = 4 - len(f_args)
-    else:
-        # use __call__, assume the self is already bound
-        f_args = get_function_arguments(func)
-        self_arg = 1 if f_args and f_args[0] == "self" else 0
-        start = 3 + self_arg - len(f_args)
+    try:
+        if isinstance(func, type):
+            # use __init__., assume the self is already bound
+            spec = inspect.getfullargspec(func.__init__)
+            if spec.varargs:
+                start = 0
+            else:
+                start = 4 - len(spec.args)
+        else:
+            spec = inspect.getfullargspec(func)
+
+            self_arg = 1 if spec.args and spec.args[0] in ("self", "cls") else 0
+            if spec.varargs:
+                start = 0
+            else:
+                start = 3 + self_arg - len(spec.args)
+    except Exception as e:
+        func = func.__call__
+        spec = inspect.getfullargspec(func)
+        self_arg = 1 if spec.args and spec.args[0] == "self" else 0
+        if spec.varargs:
+            start = 0
+        else:
+            start = 3 + self_arg - len(spec.args)
+
 
     def wrapper(*args):
         try:
             ret = func(*args[start:])
             return ret
         except Exception as e:
-            if isinstance(e, TypeError) and f_args[0] == "self" and "required positional argument" in e.args[0]:
-                Log.error("Did you provide a `self` argument to a sgtatic function?", cause=e)
+            if isinstance(e, TypeError) and spec.args[0] == "self" and "required positional argument" in e.args[0]:
+                Log.error("Did you provide a `self` argument to a static function?", cause=e)
             # Log.warning("function failure", cause=e)
             from pyparsing import ParseException
             f = ParseException("function failed")
