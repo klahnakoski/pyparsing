@@ -133,7 +133,7 @@ class ParseResults(object):
             else:
                 output = list(self._get_item_by_name(i))
                 if len(output) == 0:
-                    return None
+                    return ""
                 elif len(output) == 1:
                     return output[0]
                 else:
@@ -440,6 +440,11 @@ class ParseResults(object):
             return ""
 
     def __add__(self, other):
+        return ParseResults(Group(None), self.tokens_for_result+other.tokens_for_result)
+
+    def __radd__(self, other):
+        if not other:
+            return self
         Log.error("not expected")
         ret = copy(self)
         ret += other

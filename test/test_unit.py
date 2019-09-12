@@ -22,8 +22,6 @@ from textwrap import dedent
 import traceback
 from unittest import TestCase, TestSuite
 
-from pytest import skip
-
 from examples import fourFn, simpleSQL
 from pyparsing import And, CaselessKeyword, CaselessLiteral, Char, CharsNotIn, CloseMatch, Combine, Dict, Empty, FollowedBy, Forward, Group, Keyword, LineEnd, LineStart, Literal, OneOrMore, Optional, Or, ParseBaseException, ParseException, ParseFatalException, ParseResults, ParseSyntaxException, ParserElement, PrecededBy, QuotedString, RecursiveGrammarException, Regex, SkipTo, StringEnd, Suppress, Word, WordEnd, WordStart, ZeroOrMore, __diag__, anyCloseTag, anyOpenTag, cStyleComment, commaSeparatedList, commonHTMLEntity, countedArray, cppStyleComment, dblQuotedString, delimitedList, dictOf, downcaseTokens, empty, htmlComment, indentedBlock, infixNotation, line, lineEnd, locatedExpr, makeHTMLTags, matchPreviousExpr, matchPreviousLiteral, nestedExpr, oneOf, opAssoc, originalTextFor, pyparsing_common, pythonStyleComment, quotedString, removeQuotes, replaceHTMLEntity, replaceWith, restOfLine, sglQuotedString, srange, stringEnd, tokenMap, ungroup, upcaseTokens, withAttribute, withClass
 from pyparsing.utils import PY_3, __compat__, alphanums, alphas, col, hexnums, lineno, nums, printables, pyparsing_unicode, traceParseAction, unichr

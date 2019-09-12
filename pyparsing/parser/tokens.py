@@ -3,8 +3,6 @@ import re
 import sre_constants
 import warnings
 
-from invoke.parser import ParseResult
-
 from pyparsing.exceptions import ParseException
 from pyparsing.parser.base import ParserElement
 from pyparsing.parser.results import ParseResults

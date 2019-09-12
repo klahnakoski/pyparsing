@@ -476,13 +476,13 @@ class SkipTo(ParseElementEnhance):
         # build up return values
         loc = tmploc
         skiptext = instring[startloc:loc]
-        skipresult = ParseResults(self, [skiptext])
+        skipresult = []
 
         if self.includeMatch:
             loc, mat = expr_parse(instring, loc, doActions, callPreParse=False)
-            skipresult += mat
+            skipresult.append(mat)
 
-        return loc, skipresult
+        return loc, ParseResults(self, skipresult)
 
 class Forward(ParseElementEnhance):
     """Forward declaration of an expression to be defined later -
