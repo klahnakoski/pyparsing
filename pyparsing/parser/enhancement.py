@@ -852,6 +852,7 @@ base.OneOrMore=OneOrMore
 base.Optional=Optional
 base.NotAny=NotAny
 base.Suppress=Suppress
+base.Group=Group
 
 from pyparsing.parser import results
 results.Forward = Forward

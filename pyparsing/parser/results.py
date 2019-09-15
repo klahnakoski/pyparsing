@@ -599,7 +599,14 @@ class ParseResults(object):
             else:
                 return open_list
 
-        return simpler(pack([self]))
+        item = pack([self])
+        if isinstance(item, dict):
+            return item
+        elif isinstance(self.type_for_result, Dict):
+            # GROUPS ARE EXPECTED TO RETURN A LIST, SO RETURN THAT LIST
+            return item[0]
+        else:
+            return {}
 
     def __copy__(self):
         """

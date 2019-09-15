@@ -1951,7 +1951,7 @@ class TestPrecededByTest(TestCase):
             (interesting_num, [384, 8324], {'prefix': ['c', 'b']}),
             (semi_interesting_num, [9293874, 293], {}),
             (boring_num, [404], {}),
-            (crazy_num, [2939], {'prefix': ['^%$']}),
+            (crazy_num, [2939], {'prefix': '^%$'}),
             (finicky_num, [2939], {}),
             (very_boring_num, [404], {}),
             ]:

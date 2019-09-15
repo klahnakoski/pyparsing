@@ -13,7 +13,7 @@ from pyparsing.parser.results import ParseResults
 from pyparsing.utils import PY_3, RLock, SimpleNamespace, _MAX_INT, _OrderedDict, _defaultExceptionDebugAction, _defaultStartDebugAction, _defaultSuccessDebugAction, _trim_arity, _ustr, basestring, deque
 
 # import later
-SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith, quotedString, And, MatchFirst, Or, Each, Empty, StringEnd, Literal, Token = [None] * 17
+SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith, quotedString, And, MatchFirst, Or, Each, Empty, StringEnd, Literal, Token, Group = [None] * 18
 
 DEBUG = False
 
@@ -846,7 +846,6 @@ class ParserElement(object):
             ['More', 'Iron', 'Lead', 'Gold', 'I', 'Electricity']
         """
 
-        from pyparsing.parser.enhancement import Group
         g = Group(None)
         try:
             return ParseResults(self, [ParseResults(g, [t]) for t, s, e in self.scanString(instring, maxMatches)])
