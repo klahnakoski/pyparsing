@@ -578,7 +578,7 @@ class ParseResults(object):
                     elif isinstance(obj.type_for_result, Group):
                         open_list.append(pack(obj.tokens_for_result))
                     elif isinstance(obj.type_for_result, Suppress):
-                        return []
+                        pass
                     else:
                         item = pack(obj.tokens_for_result)
                         if isinstance(item, dict):
