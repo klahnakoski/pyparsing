@@ -9,7 +9,7 @@ from mo_logs import Log
 
 from pyparsing.utils import PY_3, _generatorType, _ustr, _xml_escape, basestring, __compat__
 
-Suppress, ParserElement, Forward, Group = [None]*4
+Suppress, ParserElement, Forward, Group, Dict = [None]*5
 
 _get = object.__getattribute__;
 
@@ -539,7 +539,11 @@ class ParseResults(object):
             else:
                 return [obj]
 
-        return internal(self, 0)
+        if isinstance(self.type_for_result, Dict):
+            # GROUPS ARE EXPECTED TO RETURN A LIST, SO RETURN THAT LIST
+            return internal(self, 0)[0]
+        else:
+            return internal(self, 0)
 
     def asDict(self):
         """
