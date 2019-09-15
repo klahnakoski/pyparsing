@@ -516,6 +516,7 @@ class ParseResults(object):
         """
 
         def internal(obj, depth):
+            # RETURN AN OPEN LIST
             if depth > 20:
                 Log.warning("deep!")
 
@@ -560,45 +561,38 @@ class ParseResults(object):
             print(json.dumps(result)) # -> Exception: TypeError: ... is not JSON serializable
             print(json.dumps(result.asDict())) # -> {"month": "31", "day": "1999", "year": "12"}
         """
-        def items(obj):
-            # return open list of (k, list(v)) pairs
-            if isinstance(obj, ParseResults):
-                name = get_name(obj)
-
-                if isinstance(obj.type_for_result, Group):
-                    yield name, [pack(obj.tokens_for_result)]
-                elif name:
-                    yield name, pack(obj.tokens_for_result)
-                elif isinstance(obj.type_for_result, Suppress):
-                    # results not found in the original data
-                    return
-                else:
-                    for tok in obj.tokens_for_result:
-                        for p in items(tok):
-                            yield p
-            else:
-                yield None, [obj]
-
         def pack(objs):
-            # return a dict, if possible
+            # return an open dict, if possible
             # otherwise return an open list
-            output_list = []
-            output_dict = {}
-            for t in objs:
-                for k, v in items(t):
-                    if k is not None:
-                        old_v = output_dict.get(k)
-                        if old_v is None:
-                            output_dict[k] = v
-                        elif isinstance(old_v, list):
-                            old_v.extend(v)
-                    output_list.extend(v)
+            open_list = []
+            open_dict = {}
+            for obj in objs:
+                if isinstance(obj, ParseResults):
+                    name = get_name(obj)
 
-            if output_dict:
-                # return output_dict
-                return [{k: simpler(v) for k, v in output_dict.items()}]
+                    if name:
+                        if isinstance(obj.type_for_result, Group):
+                            add(open_dict, name, pack(obj.tokens_for_result))
+                        else:
+                            add(open_dict, name, simpler(pack(obj.tokens_for_result)))
+                    elif isinstance(obj.type_for_result, Group):
+                        open_list.append(pack(obj.tokens_for_result))
+                    elif isinstance(obj.type_for_result, Suppress):
+                        return []
+                    else:
+                        item = pack(obj.tokens_for_result)
+                        if isinstance(item, dict):
+                            for k, v in item.items():
+                                add(open_dict, k, v)
+                        else:
+                            open_list.extend(item)
+                else:
+                    open_list.append(obj)
+
+            if open_dict:
+                return open_dict
             else:
-                return output_list
+                return open_list
 
         return simpler(pack([self]))
 
@@ -854,6 +848,16 @@ def simpler(v):
         elif len(v) == 1:
             return v[0]
     return v
+
+
+def add(obj, key, value):
+    old_v = obj.get(key)
+    if old_v is None:
+        obj[key] = value
+    elif isinstance(old_v, list):
+        old_v.append(value)
+    else:
+        obj[key] = [old_v, value]
 
 
 class Annotation(ParseResults):

@@ -727,14 +727,14 @@ class Dict(Group):
 
     def postParse(self, instring, loc, tokenlist):
         acc = tokenlist.tokens_for_result
-        for tok in list(iter(tokenlist)):
-            if len(tok) == 0:
-                continue
-
-            ikey = tok[0]
-            rest = tok[1]
-            new_tok = Annotation(ikey, rest)
-            acc.append(new_tok)
+        for a in list(acc):
+            for tok in list(iter(a)):
+                if len(tok) == 0:
+                    continue
+                ikey = tok[0]
+                rest = tok[1]
+                new_tok = Annotation(ikey, rest)
+                acc.append(new_tok)
 
         return tokenlist
 
