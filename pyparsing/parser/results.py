@@ -98,12 +98,13 @@ class ParseResults(object):
                     if get_name(tok) == i:
                         yield tok[0]
         else:
-            if get_name(self) == i:
+            name = get_name(self)
+            if name == i:
                 if len(self.tokens_for_result) == 1:
                     yield self.tokens_for_result[0]
                     return
                 yield self
-            else:
+            elif not name:
                 for tok in self.tokens_for_result:
                     if isinstance(tok, ParseResults):
                         for f in tok._get_item_by_name(i):
