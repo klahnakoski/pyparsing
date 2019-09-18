@@ -9,7 +9,7 @@ from mo_logs import Log
 
 from pyparsing.utils import PY_3, _generatorType, _ustr, _xml_escape, basestring, __compat__
 
-Suppress, ParserElement, Forward, Group, Dict = [None]*5
+Suppress, ParserElement, Forward, Group, Dict, Token = [None]*6
 
 _get = object.__getattribute__;
 
@@ -128,6 +128,8 @@ class ParseResults(object):
                         return tok[0]
         else:
             if isinstance(i, int):
+                if i < 0:
+                    i = len(self) + i
                 for ii, v in enumerate(self):
                     if i == ii:
                         return v
@@ -165,7 +167,7 @@ class ParseResults(object):
                     self.tokens_for_result[i] = v
                     break
             else:
-                self.tokens_for_result.append(Annotation(k, v))
+                self.tokens_for_result.append(Annotation(k, [v]))
 
     # def __delitem__(self, i):
     #     if isinstance(i, (int, slice)):
@@ -207,43 +209,47 @@ class ParseResults(object):
                 else:
                     yield r
 
-    def __delitem__(self, key):
-        if isinstance(key, int):
-            if key==-1:
-                # DELETE LEFT OR RIGHT
-                if not self.tokens_for_result:
-                    Log.error("not expected")
-                first = self.tokens_for_result[0]
-                if isinstance(first, ParseResults):
-                    if isinstance(first.type_for_result, Group):
-                        self.tokens_for_result = self.tokens_for_result[1:]
-                        return
-                    else:
-                        del first[-1]
-                        return
+    def _del_item_by_index(self, index):
+        for i, t in enumerate(self.tokens_for_result):
+            if isinstance(t.type_for_result, (Group, Token)):
+                if index < 1:
+                    del self.tokens_for_result[i]
+                    name = get_name(t)
+                    if name:
+                        if not isinstance(t.type_for_result, Annotation):
+                            self.tokens_for_result.append(Annotation(name, t.tokens_for_result))
+                    return
                 else:
-                    self.tokens_for_result = self.tokens_for_result[1:]
-                    return
-
-            elif key == 0:
-                if isinstance(self.type_for_result, Group):
-                    del self.tokens_for_result[0][0]
-                    return
-                del self[-1]
+                    index -= 1
+                continue
+            elif isinstance(t, Annotation):
+                return
+            elif index < len(t):
+                t._del_item_by_index(index)
                 return
             else:
-                for t in self.tokens_for_result:
-                    if key < len(t):
-                        del t[key]
-                        return
-                    key -= len(t)
+                index -= len(t)
+
+    def __delitem__(self, key):
+        if isinstance(key, int):
+            if key < 0:
+                key = len(self) + key
+            return self._del_item_by_index(key)
+
         else:
             for i, t in enumerate(self.tokens_for_result):
-                if get_name(t)==key:
-                    del self.tokens_for_result[i]
+                name = get_name(t)
+                if name == key:
+                    new_type = copy(t.type_for_result)
+                    new_type.resultsName = None
+                    t.type_for_result = new_type
                     return
-            for t in self:
-                del t[key]
+                elif not isinstance(t, ParseResults):
+                    pass
+                elif isinstance(t.type_for_result, (Group, Token)):
+                    pass
+                else:
+                    del t[key]
 
 
     def __reversed__(self):
@@ -295,7 +301,7 @@ class ParseResults(object):
            code that looks for the existence of any defined results names."""
         return any(get_name(r) for r in self.tokens_for_result)
 
-    def pop(self, *args, **kwargs):
+    def pop(self, index=-1, default=None):
         """
         Removes and returns item at specified index (default= ``last``).
         Supports both ``list`` and ``dict`` semantics for ``pop()``. If
@@ -332,23 +338,9 @@ class ParseResults(object):
 
             ['AAB', '123', '321']
         """
-        if not args:
-            args = [-1]
-        for k, v in kwargs.items():
-            if k == 'default':
-                args = (args[0], v)
-            else:
-                raise TypeError("pop() got an unexpected keyword argument '%s'" % k)
-        if (isinstance(args[0], int)
-                or len(args) == 1
-                or args[0] in self):
-            index = args[0]
-            ret = self[index]
-            del self[index]
-            return ret
-        else:
-            defaultvalue = args[1]
-            return defaultvalue
+        ret = self[index]
+        del self[index]
+        return ret if ret else default
 
     def get(self, key, defaultValue=None):
         """
@@ -876,10 +868,12 @@ class Annotation(ParseResults):
     # Append one of these to the parse results to
     # add key: value pair not found in the original text
 
-    __slots__=[]
+    __slots__ = []
 
     def __init__(self, name, value):
-        ParseResults.__init__(self, Suppress(None)(name), [value])
+        if not isinstance(value, list):
+            Log.error("expecting a list")
+        ParseResults.__init__(self, Suppress(None)(name), value)
 
     def __repr__(self):
         return "{" + get_name(self) + ": ...}"

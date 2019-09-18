@@ -1067,3 +1067,7 @@ enhancement.Word = Word
 enhancement.CharsNotIn = CharsNotIn
 enhancement._PositionToken = _PositionToken
 enhancement.StringEnd = StringEnd
+
+
+from pyparsing.parser import results
+results.Token = Token

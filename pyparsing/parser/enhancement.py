@@ -733,7 +733,7 @@ class Dict(Group):
                     continue
                 ikey = tok[0]
                 rest = tok[1]
-                new_tok = Annotation(ikey, rest)
+                new_tok = Annotation(ikey, [rest])
                 acc.append(new_tok)
 
         return tokenlist
