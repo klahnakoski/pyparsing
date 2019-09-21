@@ -24,7 +24,21 @@ class TestStructure(PyparsingExpressionTestCase):
             expected_dict={'name': 'c'}
         )
 
+        self.runTest(
+            expr=Group(w|w)("name"),
+            text="c",
+            expected_list=[['c']],
+            expected_dict={'name': ['c']}
+        )
+
     def test_group(self):
+        self.runTest(
+            expr=(w+w)("name"),
+            text="a b",
+            expected_list=['a', 'b'],
+            expected_dict={'name': ['a', 'b']}
+        )
+
         self.runTest(
             expr=Group(w+w)("name"),
             text="a b",
@@ -37,13 +51,6 @@ class TestStructure(PyparsingExpressionTestCase):
             text="a b",
             expected_list=[[['a', 'b']]],
             expected_dict={'name': [['a', 'b']]}
-        )
-
-        self.runTest(
-            expr=Group(w|w)("name"),
-            text="c",
-            expected_list=[['c']],
-            expected_dict={'name': ['c']}
         )
 
     def test_forward(self):
