@@ -3817,7 +3817,8 @@ class TestParseActionNestingTest(TestCase):
         vals.addParseAction(add_total)
         results = vals.parseString("244 23 13 2343")
         print_(results.dump())
-        self.assertEqual(results.int_values.asDict(), {}, "noop parse action changed ParseResults structure")
+        self.assertEqual(results.int_values.asDict(), {"int_values": {"total": 2623}},
+                         "noop parse action changed ParseResults structure")
 
         name = Word(alphas)('name')
         score = Word(nums + '.')('score')

@@ -1,13 +1,11 @@
 # encoding: utf-8
 from collections import Mapping, MutableMapping
 from copy import copy
-from itertools import count
 from pprint import pprint
-from weakref import ref as wkref
 
 from mo_logs import Log
 
-from pyparsing.utils import PY_3, _generatorType, _ustr, _xml_escape, basestring, __compat__
+from pyparsing.utils import PY_3, _ustr, _xml_escape, basestring, __compat__
 
 Suppress, ParserElement, Forward, Group, Dict, Token = [None]*6
 
@@ -88,22 +86,23 @@ class ParseResults(object):
         self.type_for_result = result_type
 
     def _get_item_by_name(self, i):
-        # return open list of values
+        # return open list of (modal, value) pairs
+        # modal==True means only the last value is relevant
         if not __compat__.collect_all_And_tokens:
             # pre 2.3
             if self.name_for_result == i:
-                yield self[0]
+                yield self.type_for_result.modalResults, self[0]
             else:
                 for tok in self.tokens_for_result:
                     if get_name(tok) == i:
-                        yield tok[0]
+                        yield tok.type_for_result.modalResults, tok[0]
         else:
             name = get_name(self)
             if name == i:
                 if len(self.tokens_for_result) == 1:
-                    yield self.tokens_for_result[0]
-                    return
-                yield self
+                    yield self.type_for_result.modalResults, self.tokens_for_result[0]
+                else:
+                    yield self.type_for_result.modalResults, self
             elif not name:
                 for tok in self.tokens_for_result:
                     if isinstance(tok, ParseResults):
@@ -133,14 +132,17 @@ class ParseResults(object):
                 for ii, v in enumerate(self):
                     if i == ii:
                         return v
+            elif isinstance(i, slice):
+                return list(iter(self))[i]
             else:
-                output = list(self._get_item_by_name(i))
-                if len(output) == 0:
+                modal_value_pairs = list(self._get_item_by_name(i))
+                if len(modal_value_pairs) == 0:
                     return ""
-                elif len(output) == 1:
-                    return output[0]
+                modal, value = modal_value_pairs[-1]
+                if len(modal_value_pairs) == 1 or modal:
+                    return value
                 else:
-                    return ParseResults(self.type_for_result, output)
+                    return ParseResults(self.type_for_result, modal_value_pairs)
         # Log.error("No name by {{name|quote}}", name=i)
 
     def __setitem__(self, k, v):
@@ -424,7 +426,7 @@ class ParseResults(object):
         del self.tokens_for_result[:]
 
     def __contains__(self, item):
-        return self[item] is not None
+        return bool(self[item])
 
     def __getattr__(self, name):
         try:
@@ -726,7 +728,7 @@ class ParseResults(object):
 
         if full:
             if self.haskeys():
-                items = sorted((str(k), v) for k, v in self.items())
+                items = sorted(((str(k), v) for k, v in self.items()), key=lambda v: v[0])
                 for k, v in items:
                     if out:
                         out.append(NL)
