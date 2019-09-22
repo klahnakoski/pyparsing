@@ -74,22 +74,22 @@ class ParseResults(object):
             self.__doinit = False
             self.__name = None
             self.__parent = None
-            self.__accumNames = {}
-            self.__asList = asList
+            self.names_for_result = {}
+            self.list_for_result = asList
             self.__modal = modal
             if toklist is None:
                 toklist = []
             if isinstance(toklist, list):
-                self.__toklist = toklist[:]
+                self.tokens_for_result = toklist[:]
             elif isinstance(toklist, _generatorType):
-                self.__toklist = list(toklist)
+                self.tokens_for_result = list(toklist)
             else:
-                self.__toklist = [toklist]
-            self.__tokdict = dict()
+                self.tokens_for_result = [toklist]
+            self.dict_for_result = dict()
 
         if name is not None and name:
             if not modal:
-                self.__accumNames[name] = 0
+                self.names_for_result[name] = 0
             if isinstance(name, int):
                 name = _ustr(name)  # will always return a str, but use _ustr for consistency
             self.__name = name
@@ -98,7 +98,7 @@ class ParseResults(object):
                     toklist = [toklist]
                 if asList:
                     if isinstance(toklist, ParseResults):
-                        self[name] = _ParseResultsWithOffset(ParseResults(toklist.__toklist), 0)
+                        self[name] = _ParseResultsWithOffset(ParseResults(toklist.tokens_for_result), 0)
                     else:
                         self[name] = _ParseResultsWithOffset(ParseResults(toklist[0]), 0)
                     self[name].__name = name
@@ -110,30 +110,30 @@ class ParseResults(object):
 
     def __getitem__(self, i):
         if isinstance(i, (int, slice)):
-            return self.__toklist[i]
+            return self.tokens_for_result[i]
         else:
-            if i not in self.__accumNames:
-                return self.__tokdict[i][-1][0]
+            if i not in self.names_for_result:
+                return self.dict_for_result[i][-1][0]
             else:
-                return ParseResults([v[0] for v in self.__tokdict[i]])
+                return ParseResults([v[0] for v in self.dict_for_result[i]])
 
     def __setitem__(self, k, v, isinstance=isinstance):
         if isinstance(v, _ParseResultsWithOffset):
-            self.__tokdict[k] = self.__tokdict.get(k, list()) + [v]
+            self.dict_for_result[k] = self.dict_for_result.get(k, list()) + [v]
             sub = v[0]
         elif isinstance(k, (int, slice)):
-            self.__toklist[k] = v
+            self.tokens_for_result[k] = v
             sub = v
         else:
-            self.__tokdict[k] = self.__tokdict.get(k, list()) + [_ParseResultsWithOffset(v, 0)]
+            self.dict_for_result[k] = self.dict_for_result.get(k, list()) + [_ParseResultsWithOffset(v, 0)]
             sub = v
         if isinstance(sub, ParseResults):
             sub.__parent = wkref(self)
 
     def __delitem__(self, i):
         if isinstance(i, (int, slice)):
-            mylen = len(self.__toklist)
-            del self.__toklist[i]
+            mylen = len(self.tokens_for_result)
+            del self.tokens_for_result[i]
 
             # convert int to slice
             if isinstance(i, int):
@@ -144,34 +144,34 @@ class ParseResults(object):
             removed = list(range(*i.indices(mylen)))
             removed.reverse()
             # fixup indices in token dictionary
-            for name, occurrences in self.__tokdict.items():
+            for name, occurrences in self.dict_for_result.items():
                 for j in removed:
                     for k, (value, position) in enumerate(occurrences):
                         occurrences[k] = _ParseResultsWithOffset(value, position - (position > j))
         else:
-            del self.__tokdict[i]
+            del self.dict_for_result[i]
 
     def __contains__(self, k):
-        return k in self.__tokdict
+        return k in self.dict_for_result
 
     def __len__(self):
-        return len(self.__toklist)
+        return len(self.tokens_for_result)
 
     def __bool__(self):
-        return (not not self.__toklist)
+        return (not not self.tokens_for_result)
     __nonzero__ = __bool__
 
     def __iter__(self):
-        return iter(self.__toklist)
+        return iter(self.tokens_for_result)
 
     def __reversed__(self):
-        return iter(self.__toklist[::-1])
+        return iter(self.tokens_for_result[::-1])
 
     def _iterkeys(self):
-        if hasattr(self.__tokdict, "iterkeys"):
-            return self.__tokdict.iterkeys()
+        if hasattr(self.dict_for_result, "iterkeys"):
+            return self.dict_for_result.iterkeys()
         else:
-            return iter(self.__tokdict)
+            return iter(self.dict_for_result)
 
     def _itervalues(self):
         return (self[k] for k in self._iterkeys())
@@ -214,7 +214,7 @@ class ParseResults(object):
     def haskeys(self):
         """Since keys() returns an iterator, this method is helpful in bypassing
            code that looks for the existence of any defined results names."""
-        return bool(self.__tokdict)
+        return bool(self.dict_for_result)
 
     def pop(self, *args, **kwargs):
         """
@@ -309,9 +309,9 @@ class ParseResults(object):
                 tokens.insert(0, locn)
             print(OneOrMore(Word(nums)).addParseAction(insert_locn).parseString("0 123 321")) # -> [0, '0', '123', '321']
         """
-        self.__toklist.insert(index, insStr)
+        self.tokens_for_result.insert(index, insStr)
         # fixup indices in token dictionary
-        for name, occurrences in self.__tokdict.items():
+        for name, occurrences in self.dict_for_result.items():
             for k, (value, position) in enumerate(occurrences):
                 occurrences[k] = _ParseResultsWithOffset(value, position + (position > index))
 
@@ -328,7 +328,7 @@ class ParseResults(object):
                 tokens.append(sum(map(int, tokens)))
             print(OneOrMore(Word(nums)).addParseAction(append_sum).parseString("0 123 321")) # -> ['0', '123', '321', 444]
         """
-        self.__toklist.append(item)
+        self.tokens_for_result.append(item)
 
     def extend(self, itemseq):
         """
@@ -347,14 +347,14 @@ class ParseResults(object):
         if isinstance(itemseq, ParseResults):
             self.__iadd__(itemseq)
         else:
-            self.__toklist.extend(itemseq)
+            self.tokens_for_result.extend(itemseq)
 
     def clear(self):
         """
         Clear all elements and results names.
         """
-        del self.__toklist[:]
-        self.__tokdict.clear()
+        del self.tokens_for_result[:]
+        self.dict_for_result.clear()
 
     def __getattr__(self, name):
         try:
@@ -368,10 +368,10 @@ class ParseResults(object):
         return ret
 
     def __iadd__(self, other):
-        if other.__tokdict:
-            offset = len(self.__toklist)
+        if other.dict_for_result:
+            offset = len(self.tokens_for_result)
             addoffset = lambda a: offset if a < 0 else a + offset
-            otheritems = other.__tokdict.items()
+            otheritems = other.dict_for_result.items()
             otherdictitems = [(k, _ParseResultsWithOffset(v[0], addoffset(v[1])))
                               for k, vlist in otheritems for v in vlist]
             for k, v in otherdictitems:
@@ -379,8 +379,8 @@ class ParseResults(object):
                 if isinstance(v[0], ParseResults):
                     v[0].__parent = wkref(self)
 
-        self.__toklist += other.__toklist
-        self.__accumNames.update(other.__accumNames)
+        self.tokens_for_result += other.tokens_for_result
+        self.names_for_result.update(other.names_for_result)
         return self
 
     def __radd__(self, other):
@@ -392,14 +392,14 @@ class ParseResults(object):
             return other + self
 
     def __repr__(self):
-        return "(%s, %s)" % (repr(self.__toklist), repr(self.__tokdict))
+        return "(%s, %s)" % (repr(self.tokens_for_result), repr(self.dict_for_result))
 
     def __str__(self):
-        return '[' + ', '.join(_ustr(i) if isinstance(i, ParseResults) else repr(i) for i in self.__toklist) + ']'
+        return '[' + ', '.join(_ustr(i) if isinstance(i, ParseResults) else repr(i) for i in self.tokens_for_result) + ']'
 
     def _asStringList(self, sep=''):
         out = []
-        for item in self.__toklist:
+        for item in self.tokens_for_result:
             if out and sep:
                 out.append(sep)
             if isinstance(item, ParseResults):
@@ -423,7 +423,7 @@ class ParseResults(object):
             result_list = result.asList()
             print(type(result_list), result_list) # -> <class 'list'> ['sldkj', 'lsdkj', 'sldkj']
         """
-        return [res.asList() if isinstance(res, ParseResults) else res for res in self.__toklist]
+        return [res.asList() if isinstance(res, ParseResults) else res for res in self.tokens_for_result]
 
     def asDict(self):
         """
@@ -465,10 +465,10 @@ class ParseResults(object):
         """
         Returns a new copy of a :class:`ParseResults` object.
         """
-        ret = ParseResults(self.__toklist)
-        ret.__tokdict = dict(self.__tokdict.items())
+        ret = ParseResults(self.tokens_for_result)
+        ret.dict_for_result = dict(self.dict_for_result.items())
         ret.__parent = self.__parent
-        ret.__accumNames.update(self.__accumNames)
+        ret.names_for_result.update(self.names_for_result)
         ret.__name = self.__name
         return ret
 
@@ -478,7 +478,7 @@ class ParseResults(object):
         """
         nl = "\n"
         out = []
-        namedItems = dict((v[1], k) for (k, vlist) in self.__tokdict.items()
+        namedItems = dict((v[1], k) for (k, vlist) in self.dict_for_result.items()
                           for v in vlist)
         nextLevelIndent = indent + "  "
 
@@ -503,7 +503,7 @@ class ParseResults(object):
 
         out += [nl, indent, "<", selfTag, ">"]
 
-        for i, res in enumerate(self.__toklist):
+        for i, res in enumerate(self.tokens_for_result):
             if isinstance(res, ParseResults):
                 if i in namedItems:
                     out += [res.asXML(namedItems[i],
@@ -534,7 +534,7 @@ class ParseResults(object):
         return "".join(out)
 
     def __lookup(self, sub):
-        for k, vlist in self.__tokdict.items():
+        for k, vlist in self.dict_for_result.items():
             for v, loc in vlist:
                 if sub is v:
                     return k
@@ -574,9 +574,9 @@ class ParseResults(object):
             else:
                 return None
         elif (len(self) == 1
-              and len(self.__tokdict) == 1
-              and next(iter(self.__tokdict.values()))[0][1] in (0, -1)):
-            return next(iter(self.__tokdict.keys()))
+              and len(self.dict_for_result) == 1
+              and next(iter(self.dict_for_result.values()))[0][1] in (0, -1)):
+            return next(iter(self.dict_for_result.keys()))
         else:
             return None
 
@@ -674,24 +674,24 @@ class ParseResults(object):
 
     # add support for pickle protocol
     def __getstate__(self):
-        return (self.__toklist,
-                (self.__tokdict.copy(),
+        return (self.tokens_for_result,
+                (self.dict_for_result.copy(),
                  self.__parent is not None and self.__parent() or None,
-                 self.__accumNames,
+                 self.names_for_result,
                  self.__name))
 
     def __setstate__(self, state):
-        self.__toklist = state[0]
-        self.__tokdict, par, inAccumNames, self.__name = state[1]
-        self.__accumNames = {}
-        self.__accumNames.update(inAccumNames)
+        self.tokens_for_result = state[0]
+        self.dict_for_result, par, inAccumNames, self.__name = state[1]
+        self.names_for_result = {}
+        self.names_for_result.update(inAccumNames)
         if par is not None:
             self.__parent = wkref(par)
         else:
             self.__parent = None
 
     def __getnewargs__(self):
-        return self.__toklist, self.__name, self.__asList, self.__modal
+        return self.tokens_for_result, self.__name, self.__asList, self.__modal
 
     def __dir__(self):
         return dir(type(self)) + list(self.keys())
