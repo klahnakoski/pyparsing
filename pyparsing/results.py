@@ -79,7 +79,7 @@ class ParseResults(object):
             Log.error("not expected")
         if isinstance(result_type, Forward):
             Log.error("not expected")
-        if isinstance(toklist, ParseResults) or not isinstance(toklist, list):
+        if isinstance(toklist, ParseResults) or not isinstance(toklist, (list, tuple)):
             Log.error("no longer accepted")
 
         self.tokens_for_result = toklist
@@ -141,14 +141,16 @@ class ParseResults(object):
                     return self.replaced_tokens[i]
                 return list(iter(self))[i]
             else:
-                modal_value_pairs = list(self._get_item_by_name(i))
-                if len(modal_value_pairs) == 0:
-                    return ""
-                modal, value = modal_value_pairs[-1]
-                if len(modal_value_pairs) == 1 or modal:
-                    return value
+                mv = tuple(zip(*self._get_item_by_name(i)))
+                if not mv:
+                    return ""  # TODO:  Make this None?
+                modals, values = mv
+                if any(modals) != all(modals):
+                    Log.error("complicated modal rules")
+                elif modals[0]:
+                    return values[-1]
                 else:
-                    return ParseResults(self.type_for_result, modal_value_pairs)
+                    return ParseResults(self.type_for_result, values)
         # Log.error("No name by {{name|quote}}", name=i)
 
     def __setitem__(self, k, v):

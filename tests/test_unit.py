@@ -2614,6 +2614,7 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
         ]:
             # print(expr.searchString(s))
             result = sum(expr.searchString(s))
+            temp = result['prefix']
             print(result.dump())
             self.assertParseResultsEquals(result, expected_list, expected_dict)
 
