@@ -416,7 +416,7 @@ class MatchFirst(ParseExpression):
             return self.name
 
         if self.strRepr is None:
-            self.strRepr = "{" + " | ".join(_ustr(e) for e in self.exprs) + "}"
+            self.strRepr = " | ".join("{" + _ustr(e) + "}" for e in self.exprs)
 
         return self.strRepr
 

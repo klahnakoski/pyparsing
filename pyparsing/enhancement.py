@@ -564,8 +564,10 @@ class Forward(ParseElementEnhance):
         if self.strRepr is not None:
             return self.strRepr
 
+        self_name = self.__class__.__name__
+
         # Avoid infinite recursion by setting a temporary strRepr
-        self.strRepr = ": ..."
+        self.strRepr = self_name + ": ..."
 
         # Use the string representation of main expression.
         retString = '...'
@@ -575,8 +577,8 @@ class Forward(ParseElementEnhance):
             else:
                 retString = "None"
         finally:
-            self.strRepr = self.__class__.__name__ + ": " + retString
-        return self.strRepr
+            self.strRepr = None
+        return self_name + ": " + retString
 
     def copy(self):
         if self.expr is not None:
@@ -766,6 +768,9 @@ class Suppress(TokenConverter):
 
     def suppress(self):
         return self
+
+    def __str__(self):
+        return _ustr(self.expr)
 
 
 class PrecededBy(ParseElementEnhance):

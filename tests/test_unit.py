@@ -4108,12 +4108,12 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
             """\
             a | b | c
             d | e | f
-            {a | b | c | d | e | f}
-            Forward: + | - term
-            + | - term
-            Forward: ?: term
-            ?: term
-            Forward: {a | b | c [{d | e | f : ...}]...}
+            {a | b | c} | {d | e | f}
+            Forward: {+ | - term} | {* | / term}
+            {+ | - term} | {* | / term}
+            Forward: {?: term} | {{W:(0123...)} | {{{"(" Forward: ...} ")"}}}
+            {?: term} | {{W:(0123...)} | {{{"(" Forward: ...} ")"}}}
+            Forward: {a | b | c [{d | e | f Forward: ...}]...}
             int [, int]...
             (len) int...
             nested () expression
