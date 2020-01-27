@@ -4,12 +4,14 @@ from datetime import datetime
 import re
 import warnings
 
+from mo_dots import Data
+
 from pyparsing.exceptions import ParseException
-from pyparsing.parser.base import ParserElement
-from pyparsing.parser.enhancement import Combine, Dict, FollowedBy, Forward, Group, OneOrMore, Optional, SkipTo, Suppress, TokenConverter, ZeroOrMore
-from pyparsing.parser.results import ParseResults
-from pyparsing.parser.tokens import CaselessKeyword, CaselessLiteral, CharsNotIn, Empty, Keyword, LineEnd, LineStart, Literal, NoMatch, Regex, StringEnd, StringStart, White, Word, _L, _escapeRegexRangeChars
-from pyparsing.utils import Iterable, SimpleNamespace, _bslash, _ustr, alphanums, alphas, basestring, col, hexnums, nums, printables, unichr
+from pyparsing.core import ParserElement
+from pyparsing.enhancement import Combine, Dict, FollowedBy, Forward, Group, OneOrMore, Optional, SkipTo, Suppress, TokenConverter, ZeroOrMore
+from pyparsing.results import ParseResults
+from pyparsing.tokens import CaselessKeyword, CaselessLiteral, CharsNotIn, Empty, Keyword, LineEnd, LineStart, Literal, NoMatch, Regex, StringEnd, StringStart, White, Word, _L, _escapeRegexRangeChars
+from pyparsing.utils import Iterable, _bslash, _ustr, alphanums, alphas, basestring, col, hexnums, nums, printables, unichr
 
 # import later
 And, MatchFirst = [None]*2
@@ -663,7 +665,7 @@ def withClass(classname, namespace=''):
     classattr = "%s:class" % namespace if namespace else "class"
     return withAttribute(**{classattr: classname})
 
-opAssoc = SimpleNamespace()
+opAssoc = Data()
 opAssoc.LEFT = object()
 opAssoc.RIGHT = object()
 
@@ -1378,11 +1380,11 @@ class pyparsing_common:
 
 
 # export
-from pyparsing.parser import base
+from pyparsing import core
 
-base._flatten = _flatten
-base.replaceWith = replaceWith
-base.quotedString = quotedString
+core._flatten = _flatten
+core.replaceWith = replaceWith
+core.quotedString = quotedString
 
 _escapedPunc = Word(_bslash, r"\[]-*.$+^?()~ ", exact=2).setParseAction(lambda s, l, t: t[0][1])
 _escapedHexChar = Regex(r"\\0?[xX][0-9a-fA-F]+").setParseAction(lambda s, l, t: unichr(int(t[0].lstrip(r'\0x'), 16)))

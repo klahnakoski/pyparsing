@@ -1,15 +1,15 @@
 # encoding: utf-8
-from operator import itemgetter
 import warnings
+from operator import itemgetter
 
 from mo_logs import Log
 
+from pyparsing.core import ParserElement, _PendingSkip
+from pyparsing.enhancement import OneOrMore, Optional, SkipTo, Suppress, ZeroOrMore
 from pyparsing.exceptions import ParseBaseException, ParseException, ParseSyntaxException
-from pyparsing.parser.base import ParserElement, _PendingSkip, __diag__
-from pyparsing.parser.enhancement import OneOrMore, Optional, SkipTo, Suppress, ZeroOrMore, Group
-from pyparsing.parser.results import ParseResults
-from pyparsing.parser.tokens import Empty
-from pyparsing.utils import Iterable, __compat__, _generatorType, _ustr
+from pyparsing.results import ParseResults
+from pyparsing.tokens import Empty
+from pyparsing.utils import Iterable, __compat__, _generatorType, _ustr, __diag__
 
 
 class ParseExpression(ParserElement):
@@ -572,13 +572,13 @@ class Each(ParseExpression):
 
 
 # export
-from pyparsing.parser import base
+from pyparsing import core
 
-base.And = And
-base.Or = Or
-base.Each = Each
-base.MatchFirst = MatchFirst
+core.And = And
+core.Or = Or
+core.Each = Each
+core.MatchFirst = MatchFirst
 
-from pyparsing.parser import helpers
+from pyparsing import helpers
 helpers.MatchFirst = MatchFirst
 helpers.And = And

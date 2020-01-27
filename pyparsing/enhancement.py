@@ -4,9 +4,9 @@ import warnings
 from mo_logs import Log
 
 from pyparsing.exceptions import ParseBaseException, ParseException, RecursiveGrammarException
-from pyparsing.parser.base import ParserElement, __diag__
-from pyparsing.parser.results import ParseResults, Annotation
-from pyparsing.utils import _MAX_INT, _ustr
+from pyparsing.core import ParserElement
+from pyparsing.results import ParseResults, Annotation
+from pyparsing.utils import _MAX_INT, _ustr, __diag__
 
 # import later
 Token, Literal, Keyword, Word, CharsNotIn, _PositionToken, StringEnd = [None] * 7
@@ -845,16 +845,16 @@ class PrecededBy(ParseElementEnhance):
 
 
 # export
-from pyparsing.parser import base
-base.SkipTo = SkipTo
-base.ZeroOrMore=ZeroOrMore
-base.OneOrMore=OneOrMore
-base.Optional=Optional
-base.NotAny=NotAny
-base.Suppress=Suppress
-base.Group=Group
+from pyparsing import core
+core.SkipTo = SkipTo
+core.ZeroOrMore=ZeroOrMore
+core.OneOrMore=OneOrMore
+core.Optional=Optional
+core.NotAny=NotAny
+core.Suppress=Suppress
+core.Group=Group
 
-from pyparsing.parser import results
+from pyparsing import results
 results.Forward = Forward
 results.Group = Group
 results.Dict = Dict

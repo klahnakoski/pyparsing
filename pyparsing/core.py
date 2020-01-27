@@ -9,36 +9,14 @@ import warnings
 from mo_logs import Log
 
 from pyparsing.exceptions import ParseBaseException, ParseException, ParseFatalException, conditionAsParseAction
-from pyparsing.parser.results import ParseResults
-from pyparsing.utils import PY_3, RLock, SimpleNamespace, _MAX_INT, _OrderedDict, _defaultExceptionDebugAction, _defaultStartDebugAction, _defaultSuccessDebugAction, _trim_arity, _ustr, basestring, deque
+from pyparsing.results import ParseResults
+from pyparsing.utils import PY_3, RLock, _MAX_INT, _OrderedDict, _defaultExceptionDebugAction, _defaultStartDebugAction, \
+    _defaultSuccessDebugAction, _trim_arity, _ustr, basestring, deque, __diag__
 
 # import later
 SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith, quotedString, And, MatchFirst, Or, Each, Empty, StringEnd, Literal, Token, Group = [None] * 18
 
 DEBUG = False
-
-__diag__ = SimpleNamespace()
-__diag__.__doc__ = """
-Diagnostic configuration (all default to False)
-     - warn_multiple_tokens_in_named_alternation - flag to enable warnings when a results
-       name is defined on a MatchFirst or Or expression with one or more And subexpressions
-       (only warns if __compat__.collect_all_And_tokens is False)
-     - warn_ungrouped_named_tokens_in_collection - flag to enable warnings when a results
-       name is defined on a containing expression with ungrouped subexpressions that also
-       have results names
-     - warn_name_set_on_empty_Forward - flag to enable warnings whan a Forward is defined
-       with a results name, but has no contents defined
-     - warn_on_multiple_string_args_to_oneof - flag to enable warnings whan oneOf is
-       incorrectly called with multiple str arguments
-     - enable_debug_on_named_expressions - flag to auto-enable debug on all subsequent
-       calls to ParserElement.setName()
-"""
-__diag__.warn_multiple_tokens_in_named_alternation = False
-__diag__.warn_ungrouped_named_tokens_in_collection = False
-__diag__.warn_name_set_on_empty_Forward = False
-__diag__.warn_on_multiple_string_args_to_oneof = False
-__diag__.enable_debug_on_named_expressions = False
-
 
 @contextmanager
 def default_whitespace(chars):
@@ -1347,6 +1325,6 @@ class _PendingSkip(ParserElement):
 
 # export
 
-from pyparsing.parser import results
+from pyparsing import results
 
 results.ParserElement = ParserElement

@@ -4,8 +4,8 @@ import sre_constants
 import warnings
 
 from pyparsing.exceptions import ParseException
-from pyparsing.parser.base import ParserElement
-from pyparsing.parser.results import ParseResults
+from pyparsing.core import ParserElement
+from pyparsing.results import ParseResults
 from pyparsing.utils import _MAX_INT, _ustr, alphanums, basestring, col, printables, _bslash
 
 
@@ -1053,12 +1053,12 @@ class WordEnd(_PositionToken):
 
 
 # export
-from pyparsing.parser import base, enhancement
+from pyparsing import core, enhancement
 
-base.Empty = Empty
-base.StringEnd = StringEnd
-base.Literal = Literal
-base.Token = Token
+core.Empty = Empty
+core.StringEnd = StringEnd
+core.Literal = Literal
+core.Token = Token
 
 enhancement.Token = Token
 enhancement.Literal = Literal
@@ -1069,5 +1069,5 @@ enhancement._PositionToken = _PositionToken
 enhancement.StringEnd = StringEnd
 
 
-from pyparsing.parser import results
+from pyparsing import results
 results.Token = Token
