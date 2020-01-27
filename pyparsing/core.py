@@ -37,6 +37,7 @@ def default_whitespace(chars):
     yield
     ParserElement.DEFAULT_WHITE_CHARS = old_value
 
+
 class ParserElement(object):
     """Abstract base level parser element class."""
     DEFAULT_WHITE_CHARS = " \n\t\r"

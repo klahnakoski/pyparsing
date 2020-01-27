@@ -476,7 +476,7 @@ class SkipTo(ParseElementEnhance):
         # build up return values
         loc = tmploc
         skiptext = instring[startloc:loc]
-        skipresult = []
+        skipresult = [skiptext]
 
         if self.includeMatch:
             loc, mat = expr_parse(instring, loc, doActions, callPreParse=False)
