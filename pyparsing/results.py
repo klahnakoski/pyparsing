@@ -243,11 +243,10 @@ class ParseResults(object):
                 index -= len(t)
 
     def __delitem__(self, key):
-        if isinstance(key, int):
-            if key < 0:
-                key = len(self) + key
-            return self._del_item_by_index(key)
-
+        if isinstance(key, (int, slice)):
+            if self.replaced_tokens is None:
+                self.replaced_tokens = list(self)
+            del self.replaced_tokens[key]
         else:
             for i, t in enumerate(self.tokens_for_result):
                 name = get_name(t)
@@ -266,44 +265,35 @@ class ParseResults(object):
     def __reversed__(self):
         return reversed(self.tokens_for_result)
 
-    def _iterkeys(self):
+    def iterkeys(self):
+        for k, _ in self.iteritems():
+            yield k
+
+    def itervalues(self):
+        for _, v in self.iteritems():
+            yield v
+
+    def iteritems(self):
         for r in self.tokens_for_result:
             if isinstance(r, ParseResults):
                 name = get_name(r)
                 if name:
-                    yield name
-                # elif isinstance(r.type_for_result, Group):
-                #     continue
+                    yield name, r
                 else:
-                    for k in r.keys():
-                        yield k
-
-    def _itervalues(self):
-        return (r for r in self.tokens_for_result if get_name(r) is not None)
-
-    def _iteritems(self):
-        return ((n, r) for r in self.tokens_for_result for n in [get_name(r)] if n is not None)
+                    for k, v in r.iteritems():
+                        yield k, v
 
     if PY_3:
-        keys = _iterkeys
+        keys = iterkeys
         """Returns an iterator of all named result keys."""
 
-        values = _itervalues
+        values = itervalues
         """Returns an iterator of all named result values."""
 
-        items = _iteritems
+        items = iteritems
         """Returns an iterator of all named result key-value tuples."""
 
     else:
-        iterkeys = _iterkeys
-        """Returns an iterator of all named result keys (Python 2.x only)."""
-
-        itervalues = _itervalues
-        """Returns an iterator of all named result values (Python 2.x only)."""
-
-        iteritems = _iteritems
-        """Returns an iterator of all named result key-value tuples (Python 2.x only)."""
-
         def keys(self):
             """Returns all named result keys (as a list in Python 2.x, as an iterator in Python 3.x)."""
             return list(self.iterkeys())
