@@ -826,7 +826,8 @@ class ParserElement(object):
 
         g = Group(None)
         try:
-            return ParseResults(self, [ParseResults(g, [t]) for t, s, e in self.scanString(instring, maxMatches)])
+            output = ParseResults(self, [ParseResults(g, [t]) for t, s, e in self.scanString(instring, maxMatches)])
+            return output
         except ParseBaseException as exc:
             if ParserElement.verbose_stacktrace:
                 raise

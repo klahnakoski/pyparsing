@@ -9,7 +9,7 @@ from pyparsing.utils import PY_3, _ustr, _xml_escape, basestring, __compat__
 
 Suppress, ParserElement, Forward, Group, Dict, Token = [None]*6
 
-_get = object.__getattribute__;
+_get = object.__getattribute__
 
 def get_name(tok):
     try:
@@ -66,7 +66,7 @@ class ParseResults(object):
         - year: 1999
     """
 
-    __slots__ = ["tokens_for_result", "type_for_result"]
+    __slots__ = ["tokens_for_result", "type_for_result", "replaced_tokens"]
 
     @property
     def name_for_result(self):
@@ -84,6 +84,7 @@ class ParseResults(object):
 
         self.tokens_for_result = toklist
         self.type_for_result = result_type
+        self.replaced_tokens = None
 
     def _get_item_by_name(self, i):
         # return open list of (modal, value) pairs
@@ -127,12 +128,17 @@ class ParseResults(object):
                         return tok[0]
         else:
             if isinstance(i, int):
+                if self.replaced_tokens is not None:
+                    return self.replaced_tokens[i]
+
                 if i < 0:
                     i = len(self) + i
                 for ii, v in enumerate(self):
                     if i == ii:
                         return v
             elif isinstance(i, slice):
+                if self.replaced_tokens is not None:
+                    return self.replaced_tokens[i]
                 return list(iter(self))[i]
             else:
                 modal_value_pairs = list(self._get_item_by_name(i))
@@ -146,7 +152,13 @@ class ParseResults(object):
         # Log.error("No name by {{name|quote}}", name=i)
 
     def __setitem__(self, k, v):
-        if isinstance(k, (int, slice)):
+        if isinstance(k, slice):
+            if k.start is None and k.stop is None and k.step is None:
+                self.replaced_tokens = v
+            else:
+                Log.error("do not know how to handle")
+            return
+        elif isinstance(k, int):
             for i, t in enumerate(self.tokens_for_result):
                 if isinstance(t, ParseResults):
                     ii = len(t)
@@ -156,11 +168,11 @@ class ParseResults(object):
                     else:
                         k -= ii
                 else:
-                    if k==0:
+                    if k == 0:
                         self.tokens_for_result[i] = v
                         return
                     else:
-                        k-=1
+                        k -= 1
 
             Log.error("index {{index}} beyond existing tokens", index=k)
         else:
@@ -170,12 +182,6 @@ class ParseResults(object):
                     break
             else:
                 self.tokens_for_result.append(Annotation(k, [v]))
-
-    # def __delitem__(self, i):
-    #     if isinstance(i, (int, slice)):
-    #         del self.tokens_for_result[i]
-    #     else:
-    #         self.tokens_for_result = [r for r in self.tokens_for_result if get_name(r) != i]
 
     def __contains__(self, k):
         return any(get_name(r) == k for r in self.tokens_for_result)
@@ -191,6 +197,10 @@ class ParseResults(object):
     __nonzero__ = __bool__
 
     def __iter__(self):
+        if self.replaced_tokens is not None:
+            for t in self.replaced_tokens:
+                yield t
+            return
         if isinstance(self, Annotation):
             return
             # yield self
@@ -253,12 +263,20 @@ class ParseResults(object):
                 else:
                     del t[key]
 
-
     def __reversed__(self):
         return reversed(self.tokens_for_result)
 
     def _iterkeys(self):
-        return (get_name(r) for r in self.tokens_for_result if get_name(r) is not None)
+        for r in self.tokens_for_result:
+            if isinstance(r, ParseResults):
+                name = get_name(r)
+                if name:
+                    yield name
+                # elif isinstance(r.type_for_result, Group):
+                #     continue
+                else:
+                    for k in r.keys():
+                        yield k
 
     def _itervalues(self):
         return (r for r in self.tokens_for_result if get_name(r) is not None)

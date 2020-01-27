@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, unicode_literals
 import inspect
 import string
 import sys
+import warnings
 
 from mo_logs import Log
 
