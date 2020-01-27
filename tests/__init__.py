@@ -1,15 +1,12 @@
 # encoding: utf-8
-import sys
 
 from mo_logs import Log
 
-from pyparsing import ParserElement
-
-from pyparsing.exceptions import ParseBaseException, ParseFatalException
-from pyparsing.parser.base import quotedString, replaceWith
-from pyparsing.parser.results import ParseResults
-from pyparsing.parser.tokens import Literal
-from pyparsing.utils import basestring, col, line
+from pyparsing.core import quotedString, replaceWith, ParserElement
+from pyparsing.exceptions import ParseBaseException
+from pyparsing.results import ParseResults
+from pyparsing.tokens import Literal
+from pyparsing.utils import basestring
 
 
 def runTests(self, tests, parseAll=True, comment='#',

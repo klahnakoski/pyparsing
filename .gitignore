@@ -12,6 +12,9 @@ working/*
 # CMake
 cmake-build-debug/
 
+# Mongo Explorer plugin:
+.idea/**/mongoSettings.xml
+
 ## File-based project format:
 *.iws
 
@@ -153,7 +156,6 @@ venv.bak/
 .mypy_cache/
 
 # End of https://www.gitignore.io/api/python,pycharm
-/results.txt
-/results_reference.txt
-/scripts
-/.idea
+
+# For developers on OSX
+.DS_Store

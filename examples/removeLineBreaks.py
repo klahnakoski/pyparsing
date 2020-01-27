@@ -12,18 +12,20 @@
 # Copyright 2006, by Paul McGuire
 #
 import pyparsing as pp
-from test import runTests
 
 line_end = pp.LineEnd()
 
 # define an expression for the body of a line of text - use a predicate condition to
 # accept only lines with some content.
 def mustBeNonBlank(t):
-    return t[0] != ''
+    return t[0] != ""
     # could also be written as
     # return bool(t[0])
 
-lineBody = pp.SkipTo(line_end).addCondition(mustBeNonBlank, message="line body can't be empty")
+
+lineBody = pp.SkipTo(line_end).addCondition(
+    mustBeNonBlank, message="line body can't be empty"
+)
 
 # now define a line with a trailing lineEnd, to be replaced with a space character
 textLine = lineBody + line_end().setParseAction(pp.replaceWith(" "))

@@ -1,20 +1,12 @@
 from unittest import TestCase
 
 from pyparsing import alphas, Word, Group, Forward
-from test.test_simple_unit import PyparsingExpressionTestCase
+from tests.test_simple_unit import PyparsingExpressionTestCase
 
 w = Word(alphas)
 
 
 class TestStructure(PyparsingExpressionTestCase):
-
-    def test_name(self):
-        self.runTest(
-            expr=w("name"),
-            text="c",
-            expected_list=['c'],
-            expected_dict={'name': 'c'}
-        )
 
     def test_and(self):
         self.runTest(
@@ -32,7 +24,21 @@ class TestStructure(PyparsingExpressionTestCase):
             expected_dict={'name': 'c'}
         )
 
+        self.runTest(
+            expr=Group(w|w)("name"),
+            text="c",
+            expected_list=[['c']],
+            expected_dict={'name': ['c']}
+        )
+
     def test_group(self):
+        self.runTest(
+            expr=(w+w)("name"),
+            text="a b",
+            expected_list=['a', 'b'],
+            expected_dict={'name': ['a', 'b']}
+        )
+
         self.runTest(
             expr=Group(w+w)("name"),
             text="a b",
@@ -45,13 +51,6 @@ class TestStructure(PyparsingExpressionTestCase):
             text="a b",
             expected_list=[[['a', 'b']]],
             expected_dict={'name': [['a', 'b']]}
-        )
-
-        self.runTest(
-            expr=Group(w|w)("name"),
-            text="c",
-            expected_list=[['c']],
-            expected_dict={'name': ['c']}
         )
 
     def test_forward(self):

@@ -2,27 +2,216 @@
 Change Log
 ==========
 
-Version 2.4.2a1 - July, 2019
-----------------------------
-It turns out I got the meaning of `[...]` absolutely backwards,
-so I've deleted 2.4.1 and am repushing this release as 2.4.2a1
-for people to give it a try before I can call it ready to go.
+Version 3.0.0a1
+---------------
+- Removed Py2.x support and other deprecated features. Pyparsing
+  now requires Python 3.5 or later. If you are using an earlier
+  version of Python, you must use a Pyparsing 2.4.x version
 
-The `expr[...]` notation was pushed out to be synonymous with
-`OneOrMore(expr)`, but this is really counter to most Python
-notations (and even other internal pyparsing notations as well).
-It should have been defined to be equivalent to ZeroOrMore(expr).
+  Deprecated features removed:
+  . ParseResults.asXML() - if used for debugging, switch
+    to using ParseResults.dump(); if used for data transfer,
+    use ParseResults.asDict() to convert to a nested Python
+    dict, which can then be converted to XML or JSON or
+    other transfer format
 
-It also seems that I introduced a problem by enabling some noisy
-diagnostics, and added a very subtle ParserElement-as-
-unintentional-iterator bug, so 2.4.1 really needs to be unreleased.
-So sorry, everyone!
+  . operatorPrecedence synonym for infixNotation -
+    convert to calling infixNotation
+
+  . commaSeparatedList - convert to using
+    pyparsing_common.comma_separated_list
+
+  . upcaseTokens and downcaseTokens - convert to using
+    pyparsing_common.upcaseTokens and downcaseTokens
+
+  . __compat__.collect_all_And_tokens will not be settable to
+    False to revert to pre-2.3.1 results name behavior -
+    review use of names for MatchFirst and Or expressions
+    containing And expressions, as they will return the
+    complete list of parsed tokens, not just the first one.
+    Use `__diag__.warn_multiple_tokens_in_named_alternation`
+    to help identify those expressions in your parsers that
+    will have changed as a result.
+
+- Removed support for running `python setup.py test`. The setuptools
+  maintainers consider the test command deprecated (see
+  <https://github.com/pypa/setuptools/issues/1684>). To run the Pyparsing test,
+  use the command `tox`.
+
+- POTENTIAL API CHANGE:
+  ZeroOrMore expressions that have results names will now
+  include empty lists for their name if no matches are found.
+  Previously, no named result would be present. Code that tested
+  for the presence of any expressions using "if name in results:"
+  will now always return True. This code will need to change to
+  "if name in results and results[name]:" or just
+  "if results[name]:". Also, any parser unit tests that check the
+  asDict() contents will now see additional entries for parsers
+  having named ZeroOrMore expressions, whose values will be `[]`.
+
+- POTENTIAL API CHANGE:
+  Fixed a bug in which calls to ParserElement.setDefaultWhitespaceChars
+  did not change whitespace definitions on any pyparsing built-in
+  expressions defined at import time (such as quotedString, or those
+  defined in pyparsing_common). This would lead to confusion when
+  built-in expressions would not use updated default whitespace
+  characters. Now a call to ParserElement.setDefaultWhitespaceChars
+  will also go and update all pyparsing built-ins to use the new
+  default whitespace characters. (Note that this will only modify
+  expressions defined within the pyparsing module.) Prompted by
+  work on a StackOverflow question posted by jtiai.
+
+- Expanded __diag__ and __compat__ to actual classes instead of
+  just namespaces, to add some helpful behavior:
+  - enable() and .disable() methods to give extra
+    help when setting or clearing flags (detects invalid
+    flag names, detects when trying to set a __compat__ flag
+    that is no longer settable). Use these methods now to
+    set or clear flags, instead of directly setting to True or
+    False.
+
+        import pyparsing as pp
+        pp.__diag__.enable("warn_multiple_tokens_in_named_alternation")
+
+  - __diag__.enable_all_warnings() is another helper that sets
+    all "warn*" diagnostics to True.
+
+        pp.__diag__.enable_all_warnings()
+
+- New namespace, assert methods and classes added to support writing
+  unit tests.
+  - assertParseResultsEquals
+  - assertParseAndCheckList
+  - assertParseAndCheckDict
+  - assertRunTestResults
+  - assertRaisesParseException
+  - reset_pyparsing_context context manager, to restore pyparsing
+    config settings
+
+- Enhanced the Regex class to be compatible with re's compiled with the
+  re-equivalent regex module. Individual expressions can be built with
+  regex compiled expressions using:
+
+    import pyparsing as pp
+    import regex
+
+    # would use regex for this expression
+    integer_parser = pp.Regex(regex.compile(r'\d+'))
+
+  You can also replace the use of the re module as it is used internally
+  by pyparsing in a number of classes by overwriting pyparsing's imported
+  re symbol:
+
+    import pyparsing as pp
+    import regex
+    pp.re = regex  # redirects all internal re usage in pyparsing to regex
+
+    # would now use regex instead of re to compile this string
+    integer_parser = pp.Regex(r'\d+')
+
+    # would also now use regex internally instead of re
+    integer_parser = pp.Word(pp.nums)
+
+  Inspired by PR submitted by bjrnfrdnnd on GitHub, very nice!
+
+- Fixed handling of ParseSyntaxExceptions raised as part of Each
+  expressions, when sub-expressions contain '-' backtrack
+  suppression. As part of resolution to a question posted by John
+  Greene on StackOverflow.
+
+- Potentially *huge* performance enhancement when parsing Word
+  expressions built from pyparsing_unicode character sets. Word now
+  internally converts ranges of consecutive characters to regex
+  character ranges (converting "0123456789" to "0-9" for instance),
+  resulting in as much as 50X improvement in performance! Work
+  inspired by a question posted by Midnighter on StackOverflow.
+
+- Improvements in select_parser.py, to include new SQL syntax
+  from SQLite. PR submitted by Robert Coup, nice work!
+
+- Fixed bug in PrecededBy which caused infinite recursion, issue #127
+  submitted by EdwardJB.
+
+- Fixed bug in CloseMatch where end location was incorrectly
+  computed; and updated partial_gene_match.py example.
+
+- Fixed bug in indentedBlock with a parser using two different
+  types of nested indented blocks with different indent values,
+  but sharing the same indent stack, submitted by renzbagaporo.
+
+- BigQueryViewParser.py added to examples directory, PR submitted
+  by Michael Smedberg, nice work!
+
+- booleansearchparser.py added to examples directory, PR submitted
+  by xecgr. Builds on searchparser.py, adding support for '*'
+  wildcards and non-Western alphabets.
 
 
-(Updated)
-- A new shorthand notation has been added for repetition
-  expressions: expr[min, max], with '...' valid as a min
-  or max value:
+Version 2.4.6 - December, 2019
+------------------------------
+- Fixed typos in White mapping of whitespace characters, to use
+  correct "\u" prefix instead of "u\".
+
+- Fix bug in left-associative ternary operators defined using
+  infixNotation. First reported on StackOverflow by user Jeronimo.
+
+- Backport of pyparsing_test namespace from 3.0.0, including
+  TestParseResultsAsserts mixin class defining unittest-helper
+  methods:
+  . def assertParseResultsEquals(
+            self, result, expected_list=None, expected_dict=None, msg=None)
+  . def assertParseAndCheckList(
+            self, expr, test_string, expected_list, msg=None, verbose=True)
+  . def assertParseAndCheckDict(
+            self, expr, test_string, expected_dict, msg=None, verbose=True)
+  . def assertRunTestResults(
+            self, run_tests_report, expected_parse_results=None, msg=None)
+  . def assertRaisesParseException(self, exc_type=ParseException, msg=None)
+
+  To use the methods in this mixin class, declare your unittest classes as:
+
+    from pyparsing import pyparsing_test as ppt
+    class MyParserTest(ppt.TestParseResultsAsserts, unittest.TestCase):
+        ...
+
+
+Version 2.4.5 - November, 2019
+------------------------------
+- NOTE: final release compatible with Python 2.x.
+
+- Fixed issue with reading README.rst as part of setup.py's
+  initialization of the project's long_description, with a
+  non-ASCII space character causing errors when installing from
+  source on platforms where UTF-8 is not the default encoding.
+
+
+Version 2.4.4 - November, 2019
+--------------------------------
+- Unresolved symbol reference in 2.4.3 release was masked by stdout
+  buffering in unit tests, thanks for the prompt heads-up, Ned
+  Batchelder!
+
+
+Version 2.4.3 - November, 2019
+------------------------------
+- Fixed a bug in ParserElement.__eq__ that would for some parsers
+  create a recursion error at parser definition time. Thanks to
+  Michael Clerx for the assist. (Addresses issue #123)
+
+- Fixed bug in indentedBlock where a block that ended at the end
+  of the input string could cause pyparsing to loop forever. Raised
+  as part of discussion on StackOverflow with geckos.
+
+- Backports from pyparsing 3.0.0:
+  . __diag__.enable_all_warnings()
+  . Fixed bug in PrecededBy which caused infinite recursion, issue #127
+  . support for using regex-compiled RE to construct Regex expressions
+
+
+Version 2.4.2 - July, 2019
+--------------------------
+- Updated the shorthand notation that has been added for repetition
+  expressions: expr[min, max], with '...' valid as a min or max value:
      - expr[...] and expr[0, ...] are equivalent to ZeroOrMore(expr)
      - expr[1, ...] is equivalent to OneOrMore(expr)
      - expr[n, ...] or expr[n,] is equivalent
@@ -36,6 +225,9 @@ So sorry, everyone!
 
   Better interpretation of [...] as ZeroOrMore raised by crowsonkb,
   thanks for keeping me in line!
+
+  If upgrading from 2.4.1 or 2.4.1.1 and you have used `expr[...]`
+  for `OneOrMore(expr)`, it must be updated to `expr[1, ...]`.
 
 - The defaults on all the `__diag__` switches have been set to False,
   to avoid getting alarming warnings. To use these diagnostics, set
@@ -51,6 +243,70 @@ So sorry, everyone!
   by sequentially calling __getitem__ with increasing numbers until
   getting an IndexError. Found during investigation of problem
   reported by murlock, merci!
+
+
+Version 2.4.2a1 - July, 2019
+----------------------------
+It turns out I got the meaning of `[...]` absolutely backwards,
+so I've deleted 2.4.1 and am repushing this release as 2.4.2a1
+for people to give it a try before I can call it ready to go.
+
+The `expr[...]` notation was pushed out to be synonymous with
+`OneOrMore(expr)`, but this is really counter to most Python
+notations (and even other internal pyparsing notations as well).
+It should have been defined to be equivalent to ZeroOrMore(expr).
+
+- Changed [...] to emit ZeroOrMore instead of OneOrMore.
+
+- Removed code that treats ParserElements like iterables.
+
+- Change all __diag__ switches to False.
+
+
+Version 2.4.1.1 - July 24, 2019
+-------------------------------
+This is a re-release of version 2.4.1 to restore the release history
+in PyPI, since the 2.4.1 release was deleted.
+
+There are 3 known issues in this release, which are fixed in
+the upcoming 2.4.2:
+
+- API change adding support for `expr[...]` - the original
+  code in 2.4.1 incorrectly implemented this as OneOrMore.
+  Code using this feature under this relase should explicitly
+  use `expr[0, ...]` for ZeroOrMore and `expr[1, ...]` for
+  OneOrMore. In 2.4.2 you will be able to write `expr[...]`
+  equivalent to `ZeroOrMore(expr)`.
+
+- Bug if composing And, Or, MatchFirst, or Each expressions
+  using an expression. This only affects code which uses
+  explicit expression construction using the And, Or, etc.
+  classes instead of using overloaded operators '+', '^', and
+  so on. If constructing an And using a single expression,
+  you may get an error that "cannot multiply ParserElement by
+  0 or (0, 0)" or a Python `IndexError`. Change code like
+
+    cmd = Or(Word(alphas))
+
+  to
+
+    cmd = Or([Word(alphas)])
+
+  (Note that this is not the recommended style for constructing
+  Or expressions.)
+
+- Some newly-added `__diag__` switches are enabled by default,
+  which may give rise to noisy user warnings for existing parsers.
+  You can disable them using:
+
+    import pyparsing as pp
+    pp.__diag__.warn_multiple_tokens_in_named_alternation = False
+    pp.__diag__.warn_ungrouped_named_tokens_in_collection = False
+    pp.__diag__.warn_name_set_on_empty_Forward = False
+    pp.__diag__.warn_on_multiple_string_args_to_oneof = False
+    pp.__diag__.enable_debug_on_named_expressions = False
+
+  In 2.4.2 these will all be set to False by default.
 
 
 Version 2.4.1 - July, 2019

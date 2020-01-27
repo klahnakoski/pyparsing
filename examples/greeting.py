@@ -6,7 +6,6 @@
 # Copyright 2003, 2019 by Paul McGuire
 #
 import pyparsing as pp
-from test import runTests
 
 # define grammar
 greet = pp.Word(pp.alphas) + "," + pp.Word(pp.alphas) + pp.oneOf("! ? .")
@@ -15,12 +14,14 @@ greet = pp.Word(pp.alphas) + "," + pp.Word(pp.alphas) + pp.oneOf("! ? .")
 hello = "Hello, World!"
 
 # parse input string
-print(hello, "->", greet.parseString( hello ))
+print(hello, "->", greet.parseString(hello))
 
 # parse a bunch of input strings
-greet.runTests("""\
+greet.runTests(
+    """\
     Hello, World!
     Ahoy, Matey!
     Howdy, Pardner!
     Morning, Neighbor!
-    """)
+    """
+)

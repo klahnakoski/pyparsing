@@ -3,7 +3,7 @@ from unittest import TestCase
 import uuid
 
 from pyparsing import CaselessLiteral, Group, Word, alphanums, alphas, delimitedList, pyparsing_common, tokenMap, upcaseTokens
-from test import runTests
+from tests import runTests
 
 
 class TestBasic(TestCase):
