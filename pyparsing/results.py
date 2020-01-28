@@ -250,6 +250,11 @@ class ParseResults(object):
                 self.replaced_tokens = list(self)
             del self.replaced_tokens[key]
         else:
+            if key == self.name_for_result:
+                new_type = copy(self.type_for_result)
+                new_type.resultsName = None
+                self.type_for_result = new_type
+                return
             for i, t in enumerate(self.tokens_for_result):
                 name = get_name(t)
                 if name == key:
@@ -565,15 +570,15 @@ class ParseResults(object):
             for obj in objs:
                 if isinstance(obj, ParseResults):
                     name = get_name(obj)
-
                     if name:
-                        if isinstance(obj.type_for_result, Group):
-                            add(open_dict, name, pack(obj.tokens_for_result))
-                        elif not obj.type_for_result.modalResults:
-                            # EXPECTING MANY, SO PROVIDE AN ARRAY
-                            add(open_dict, name, pack(obj.tokens_for_result))
-                        else:
-                            add(open_dict, name, simpler(pack(obj.tokens_for_result)))
+                        add(open_dict, name, pack(obj.tokens_for_result))
+                        # if isinstance(obj.type_for_result, Group):
+                        #     add(open_dict, name, pack(obj.tokens_for_result))
+                        # elif not obj.type_for_result.modalResults:
+                        #     # EXPECTING MANY, SO PROVIDE AN ARRAY
+                        #     add(open_dict, name, pack(obj.tokens_for_result))
+                        # else:
+                        #     add(open_dict, name, simpler(pack(obj.tokens_for_result)))
                     elif isinstance(obj.type_for_result, Group):
                         open_list.append(pack(obj.tokens_for_result))
                     elif isinstance(obj.type_for_result, Suppress):
@@ -862,7 +867,8 @@ def simpler(v):
 def add(obj, key, value):
     old_v = obj.get(key)
     if old_v is None:
-        obj[key] = value
+        if value or value == 0:
+            obj[key] = value
     elif isinstance(old_v, list):
         if isinstance(value, list):
             old_v.extend(value)
