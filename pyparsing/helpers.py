@@ -882,13 +882,13 @@ def nestedExpr(opener="(", closer=")", content=None, ignoreExpr=quotedString.cop
                     content = (Combine(OneOrMore(~ignoreExpr
                                                  + CharsNotIn(opener
                                                               + closer
-                                                              + ParserElement.DEFAULT_WHITE_CHARS, exact=1)
+                                                              + "".join(ParserElement.DEFAULT_WHITE_CHARS), exact=1)
                                                  )
                                        ).setParseAction(lambda t: t[0].strip()))
                 else:
                     content = (empty.copy() + CharsNotIn(opener
                                                          + closer
-                                                         + ParserElement.DEFAULT_WHITE_CHARS
+                                                         + "".join(ParserElement.DEFAULT_WHITE_CHARS)
                                                          ).setParseAction(lambda t: t[0].strip()))
             else:
                 if ignoreExpr is not None:

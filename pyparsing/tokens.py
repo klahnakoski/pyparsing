@@ -770,7 +770,7 @@ class CharsNotIn(Token):
     def __init__(self, notChars, min=1, max=0, exact=0):
         super(CharsNotIn, self).__init__()
         self.skipWhitespace = False
-        self.notChars = notChars
+        self.notChars = "".join(notChars)
 
         if min < 1:
             raise ValueError("cannot specify a minimum length < 1; use "
