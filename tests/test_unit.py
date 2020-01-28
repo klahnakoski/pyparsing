@@ -9,6 +9,7 @@
 
 import datetime
 import sys
+from copy import copy
 from io import StringIO
 from unittest import TestCase
 
@@ -88,7 +89,7 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
     def testUpdateDefaultWhitespace(self):
         import pyparsing as pp
 
-        prev_default_whitespace_chars = pp.ParserElement.DEFAULT_WHITE_CHARS
+        prev_default_whitespace_chars = copy(pp.ParserElement.DEFAULT_WHITE_CHARS)
         try:
             pp.dblQuotedString.copyDefaultWhiteChars = False
             pp.ParserElement.setDefaultWhitespaceChars(" \t")
@@ -1464,21 +1465,21 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
                     result, expected_list=expected_list, expected_dict=expected_dict
                 )
 
-        # # ellipses for SkipTo
-        # e = ... + Literal("end")
-        # test(e, "start 123 end", ["start 123 ", "end"], {"_skipped": ["start 123 "]})
-        #
-        # e = Literal("start") + ... + Literal("end")
-        # test(e, "start 123 end", ["start", "123 ", "end"], {"_skipped": ["123 "]})
-        #
-        # e = Literal("start") + ...
-        # test(e, "start 123 end", None, None)
-        #
-        # e = And(["start", ..., "end"])
-        # test(e, "start 123 end", ["start", "123 ", "end"], {"_skipped": ["123 "]})
-        #
-        # e = And([..., "end"])
-        # test(e, "start 123 end", ["start 123 ", "end"], {"_skipped": ["start 123 "]})
+        # ellipses for SkipTo
+        e = ... + Literal("end")
+        test(e, "start 123 end", ["start 123 ", "end"], {"_skipped": ["start 123 "]})
+
+        e = Literal("start") + ... + Literal("end")
+        test(e, "start 123 end", ["start", "123 ", "end"], {"_skipped": ["123 "]})
+
+        e = Literal("start") + ...
+        test(e, "start 123 end", None, None)
+
+        e = And(["start", ..., "end"])
+        test(e, "start 123 end", ["start", "123 ", "end"], {"_skipped": ["123 "]})
+
+        e = And([..., "end"])
+        test(e, "start 123 end", ["start 123 ", "end"], {"_skipped": ["start 123 "]})
 
         e = "start" + (num_word | ...) + "end"
         test(e, "start 456 end", ["start", "456", "end"], {})
@@ -4051,7 +4052,7 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
         except ParseException as pe:
             self.assertEqual(
                 pe.msg,
-                r"""Expected {"a" | "ᄑ"}""",
+                r"""Expected {"a"} | {"ᄑ"}""",
                 "Invalid error message raised, got %r" % pe.msg,
             )
 

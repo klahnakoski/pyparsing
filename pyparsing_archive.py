@@ -2527,8 +2527,8 @@ class ParserElement(object):
         Overrides the default whitespace chars
         """
         self.skipWhitespace = True
-        self.whiteChars = chars
         self.copyDefaultWhiteChars = copy_defaults
+        self.whiteChars = chars
         return self
 
     def parseWithTabs(self):

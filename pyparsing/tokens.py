@@ -962,7 +962,7 @@ class LineEnd(_PositionToken):
     """
     def __init__(self):
         super(LineEnd, self).__init__()
-        self.setWhitespaceChars(ParserElement.DEFAULT_WHITE_CHARS.replace("\n", ""))
+        self.setWhitespaceChars([w for w in ParserElement.DEFAULT_WHITE_CHARS if w!='\n'])
         self.errmsg = "Expected end of line"
 
     def parseImpl(self, instring, loc, doActions=True):

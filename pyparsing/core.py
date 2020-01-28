@@ -33,14 +33,15 @@ def default_whitespace(chars):
         OneOrMore(Word(alphas)).parseString("abc def\nghi jkl")  # -> ['abc', 'def']
     """
     old_value = ParserElement.DEFAULT_WHITE_CHARS
-    ParserElement.DEFAULT_WHITE_CHARS = chars
+    ParserElement.DEFAULT_WHITE_CHARS[:] = list(chars)
     yield
     ParserElement.DEFAULT_WHITE_CHARS = old_value
 
+DEFAULT_WHITE_CHARS = " \n\t\r"
 
 class ParserElement(object):
     """Abstract base level parser element class."""
-    DEFAULT_WHITE_CHARS = " \n\t\r"
+    DEFAULT_WHITE_CHARS = list(DEFAULT_WHITE_CHARS)
     verbose_stacktrace = False
 
     @staticmethod
@@ -57,7 +58,18 @@ class ParserElement(object):
             ParserElement.setDefaultWhitespaceChars(" \t")
             OneOrMore(Word(alphas)).parseString("abc def\nghi jkl")  # -> ['abc', 'def']
         """
-        return default_whitespace(chars)
+        return default_whitespace(chars).__enter__()
+
+    @property
+    def copyDefaultWhiteChars(self):
+        return self.whiteChars is ParserElement.DEFAULT_WHITE_CHARS
+
+    @copyDefaultWhiteChars.setter
+    def copyDefaultWhiteChars(self, do_copy):
+        if do_copy:
+            self.whiteChars = ParserElement.DEFAULT_WHITE_CHARS
+        else:
+            self.whiteChars = copy(ParserElement.DEFAULT_WHITE_CHARS)
 
     @staticmethod
     def inlineLiteralsUsing(cls):
@@ -89,7 +101,6 @@ class ParserElement(object):
         self.resultsName = None
         self.saveAsList = savelist
         self.skipWhitespace = True
-        self.whiteChars = set(ParserElement.DEFAULT_WHITE_CHARS)
         self.copyDefaultWhiteChars = True
         self.mayReturnEmpty = False # used when checking for left-recursion
         self.keepTabs = False
@@ -1118,8 +1129,8 @@ class ParserElement(object):
         Overrides the default whitespace chars
         """
         self.skipWhitespace = True
-        self.whiteChars = chars
         self.copyDefaultWhiteChars = False
+        self.whiteChars = chars
         return self
 
     def parseWithTabs(self):
