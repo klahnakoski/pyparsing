@@ -860,15 +860,19 @@ def simpler(v):
 
 
 def add(obj, key, value):
-    if not isinstance(value, list):
-        Log.error("not expected")
     old_v = obj.get(key)
     if old_v is None:
         obj[key] = value
     elif isinstance(old_v, list):
-        old_v.extend(value)
+        if isinstance(value, list):
+            old_v.extend(value)
+        else:
+            old_v.append(value)
     else:
-        obj[key] = [old_v, value]
+        if isinstance(value, list):
+            obj[key] = [old_v] + value
+        else:
+            obj[key] = [old_v, value]
 
 
 class Annotation(ParseResults):
