@@ -591,11 +591,11 @@ class ParseResults(object):
                             add(open_dict, name, simpler(pack(obj.tokens_for_result)))
                     elif isinstance(obj.type_for_result, Group):
                         item = pack(obj.tokens_for_result)
-                        if isinstance(item, dict):
-                            for k, v in item.items():
-                                add(open_dict, k, v)
-                        else:
-                            open_list.append(item)
+                        # if isinstance(item, dict):
+                        #     for k, v in item.items():
+                        #         add(open_dict, k, v)
+                        # else:
+                        open_list.append(item)
                     elif isinstance(obj.type_for_result, Suppress):
                         pass
                     else:
@@ -906,7 +906,10 @@ class Annotation(ParseResults):
         if not isinstance(value, list):
             Log.error("expecting a list")
         ParseResults.__init__(self, Suppress(None)(name), value)
-        self.type_for_result.modalResults = True
+        if len(value) > 1:
+            self.type_for_result.modalResults = False
+        else:
+            self.type_for_result.modalResults = True
 
     def __repr__(self):
         return "{" + get_name(self) + ": ...}"
