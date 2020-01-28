@@ -485,13 +485,12 @@ class ParseResults(object):
         return '[' + ', '.join(_ustr(v) if isinstance(v, ParseResults) else repr(v) for v in self.tokens_for_result) + ']'
 
     def _asStringList(self):
-        out = []
-        for item in self.tokens_for_result:
-            if isinstance(item, ParseResults):
-                out.extend(item._asStringList())
+        for t in self:
+            if isinstance(t, ParseResults):
+                for s in t._asStringList():
+                    yield s
             else:
-                out.append(_ustr(item))
-        return out
+                yield t
 
     def asString(self, sep=''):
         return sep.join(self._asStringList())

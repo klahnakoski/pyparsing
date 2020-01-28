@@ -38,7 +38,7 @@ class ParseExpression(ParserElement):
         """Extends ``leaveWhitespace`` defined in base class, and also invokes ``leaveWhitespace`` on
            all contained expressions."""
         self.skipWhitespace = False
-        self.exprs = [e.copy() for e in self.exprs]
+        self.exprs = [e for e in self.exprs]
         for e in self.exprs:
             e.leaveWhitespace()
         return self
@@ -107,7 +107,7 @@ class ParseExpression(ParserElement):
 
     def copy(self):
         ret = super(ParseExpression, self).copy()
-        ret.exprs = [e.copy() for e in self.exprs]
+        ret.exprs = [e for e in self.exprs]
         return ret
 
     def _setResultsName(self, name, listAllMatches=False):
