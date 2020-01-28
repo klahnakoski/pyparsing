@@ -571,14 +571,14 @@ class ParseResults(object):
                 if isinstance(obj, ParseResults):
                     name = get_name(obj)
                     if name:
-                        add(open_dict, name, pack(obj.tokens_for_result))
-                        # if isinstance(obj.type_for_result, Group):
-                        #     add(open_dict, name, pack(obj.tokens_for_result))
-                        # elif not obj.type_for_result.modalResults:
-                        #     # EXPECTING MANY, SO PROVIDE AN ARRAY
-                        #     add(open_dict, name, pack(obj.tokens_for_result))
-                        # else:
-                        #     add(open_dict, name, simpler(pack(obj.tokens_for_result)))
+                        # add(open_dict, name, pack(obj.tokens_for_result))
+                        if isinstance(obj.type_for_result, Group):
+                            add(open_dict, name, pack(obj.tokens_for_result))
+                        elif not obj.type_for_result.modalResults:
+                            # EXPECTING MANY, SO PROVIDE AN ARRAY
+                            add(open_dict, name, pack(obj.tokens_for_result))
+                        else:
+                            add(open_dict, name, simpler(pack(obj.tokens_for_result)))
                     elif isinstance(obj.type_for_result, Group):
                         open_list.append(pack(obj.tokens_for_result))
                     elif isinstance(obj.type_for_result, Suppress):
@@ -891,6 +891,7 @@ class Annotation(ParseResults):
         if not isinstance(value, list):
             Log.error("expecting a list")
         ParseResults.__init__(self, Suppress(None)(name), value)
+        self.type_for_result.modalResults = True
 
     def __repr__(self):
         return "{" + get_name(self) + ": ...}"
