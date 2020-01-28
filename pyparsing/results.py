@@ -544,11 +544,11 @@ class ParseResults(object):
             else:
                 return [obj]
 
-        if isinstance(self.type_for_result, Dict):
-            # GROUPS ARE EXPECTED TO RETURN A LIST, SO RETURN THAT LIST
-            return internal(self, 0)[0]
+        output = internal(self, 0)
+        if isinstance(self.type_for_result, Group):
+            return output[0]
         else:
-            return internal(self, 0)
+            return output
 
     def asDict(self):
         """
@@ -582,6 +582,9 @@ class ParseResults(object):
                     if name:
                         if isinstance(obj.type_for_result, Group):
                             add(open_dict, name, pack(obj.tokens_for_result))
+                        elif not obj.type_for_result.modalResults:
+                            # EXPECTING MANY, SO PROVIDE AN ARRAY
+                            add(open_dict, name, pack(obj.tokens_for_result))
                         else:
                             add(open_dict, name, simpler(pack(obj.tokens_for_result)))
                     elif isinstance(obj.type_for_result, Group):
@@ -606,9 +609,12 @@ class ParseResults(object):
         item = pack([self])
         if isinstance(item, dict):
             return item
-        elif isinstance(self.type_for_result, Dict):
+        elif isinstance(self.type_for_result, Group) or get_name(self):
             # GROUPS ARE EXPECTED TO RETURN A LIST, SO RETURN THAT LIST
-            return item[0]
+            if isinstance(item[0], list):
+                return {}
+            else:
+                return item[0]
         else:
             return {}
 
@@ -867,11 +873,13 @@ def simpler(v):
 
 
 def add(obj, key, value):
+    if not isinstance(value, list):
+        Log.error("not expected")
     old_v = obj.get(key)
     if old_v is None:
         obj[key] = value
     elif isinstance(old_v, list):
-        old_v.append(value)
+        old_v.extend(value)
     else:
         obj[key] = [old_v, value]
 
