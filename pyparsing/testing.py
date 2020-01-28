@@ -6,7 +6,7 @@ from unittest import TestCase
 from pyparsing.core import (
     ParserElement,
     ParseException,
-    __diag__)
+    __diag__, DEFAULT_WHITE_CHARS)
 from pyparsing.tokens import Keyword
 from pyparsing.utils import __compat__
 
@@ -38,7 +38,7 @@ class reset_pyparsing_context:
         self._save_context = {}
 
     def save(self):
-        self._save_context["default_whitespace"] = ParserElement.DEFAULT_WHITE_CHARS
+        self._save_context["default_whitespace"] = DEFAULT_WHITE_CHARS
         self._save_context["default_keyword_chars"] = Keyword.DEFAULT_KEYWORD_CHARS
         self._save_context[
             "literal_string_class"
