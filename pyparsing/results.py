@@ -92,15 +92,17 @@ class ParseResults(object):
         if not __compat__.collect_all_And_tokens:
             # pre 2.3
             if self.name_for_result == i:
-                yield self.type_for_result.modalResults, self[0]
+                yield self.type_for_result.modalResults, list(self)
             else:
                 for tok in self.tokens_for_result:
                     if get_name(tok) == i:
-                        yield tok.type_for_result.modalResults, tok[0]
+                        yield tok.type_for_result.modalResults, list(self)
         else:
             name = get_name(self)
             if name == i:
-                if len(self.tokens_for_result) == 1:
+                if isinstance(self.type_for_result, Group):
+                    yield self.type_for_result.modalResults, self
+                elif len(self.tokens_for_result) == 1:
                     yield self.type_for_result.modalResults, self.tokens_for_result[0]
                 else:
                     yield self.type_for_result.modalResults, self
@@ -121,7 +123,16 @@ class ParseResults(object):
                         if i == ii:
                             return v
             elif self.name_for_result == i:
-                return self[0]
+                mv = tuple(zip(*self._get_item_by_name(i)))
+                if not mv:
+                    return ""  # TODO:  Make this None?
+                modals, values = mv
+                if any(modals) != all(modals):
+                    Log.error("complicated modal rules")
+                elif modals[0]:
+                    return values[-1]
+                else:
+                    return ParseResults(self.type_for_result, values)
             else:
                 for tok in self.tokens_for_result:
                     if get_name(tok) == i:
@@ -579,7 +590,12 @@ class ParseResults(object):
                         else:
                             add(open_dict, name, simpler(pack(obj.tokens_for_result)))
                     elif isinstance(obj.type_for_result, Group):
-                        open_list.append(pack(obj.tokens_for_result))
+                        item = pack(obj.tokens_for_result)
+                        if isinstance(item, dict):
+                            for k, v in item.items():
+                                add(open_dict, k, v)
+                        else:
+                            open_list.append(item)
                     elif isinstance(obj.type_for_result, Suppress):
                         pass
                     else:
