@@ -392,7 +392,9 @@ class ParseResults(object):
                 tokens.insert(0, locn)
             print(OneOrMore(Word(nums)).addParseAction(insert_locn).parseString("0 123 321")) # -> [0, '0', '123', '321']
         """
-        self.tokens_for_result.insert(index, insStr)
+        if self.replaced_tokens is None:
+            self.replaced_tokens = list(self)
+        self.replaced_tokens.insert(index, insStr)
 
     def append(self, item):
         """
@@ -407,7 +409,9 @@ class ParseResults(object):
                 tokens.append(sum(map(int, tokens)))
             print(OneOrMore(Word(nums)).addParseAction(append_sum).parseString("0 123 321")) # -> ['0', '123', '321', 444]
         """
-        self.tokens_for_result.append(item)
+        if self.replaced_tokens is None:
+            self.replaced_tokens = list(self)
+        self.replaced_tokens.append(item)
 
     def extend(self, itemseq):
         """
@@ -423,17 +427,18 @@ class ParseResults(object):
                 return ''.join(tokens)
             print(patt.addParseAction(make_palindrome).parseString("lskdj sdlkjf lksd")) # -> 'lskdjsdlkjflksddsklfjkldsjdksl'
         """
+        if self.replaced_tokens is None:
+            self.replaced_tokens = list(self)
         if isinstance(itemseq, ParseResults):
             self.__iadd__(itemseq)
         else:
-            self.tokens_for_result.extend(itemseq)
+            self.replaced_tokens.extend(itemseq)
 
     def clear(self):
         """
         Clear all elements and results names.
         """
-        Log.error("not expected")
-        del self.tokens_for_result[:]
+        self.replaced_tokens = []
 
     def __contains__(self, item):
         return bool(self[item])
@@ -456,27 +461,9 @@ class ParseResults(object):
         return ret
 
     def __iadd__(self, other):
-        Log.error("not expected")
-        # safe to collapse
-        if isinstance(other, list):
-            Log.error("not expected")
-
-        if isinstance(other, ParseResults):
-            name = get_name(other)
-            if isinstance(other.type_for_result, Group):
-                self.tokens_for_result.append(other)
-            elif name:
-                tokens = self.tokens_for_result
-                for o in other.tokens_for_result:
-                    if isinstance(o, ParseResults):
-                        o.name_for_result = name
-                    else:
-                        o = ParseResults(self.type_for_result, [o])
-                    tokens.append(o)
-            else:
-                self.tokens_for_result.extend(other)
-        else:
-            self.tokens_for_result.append(other)
+        if self.replaced_tokens is None:
+            self.replaced_tokens = list(self)
+        self.replaced_tokens.append(other)
         return self
 
     def __repr__(self):

@@ -278,7 +278,7 @@ def _trim_arity(func):
             if isinstance(e, TypeError) and spec.args[0] == "self" and "required positional argument" in e.args[0]:
                 Log.error("Did you provide a `self` argument to a static function?", cause=e)
             # Log.warning("function failure", cause=e)
-            from pyparsing import ParseException
+            from pyparsing.exceptions import ParseException
             f = ParseException("function failed")
             f.__cause__ = e
             raise f
