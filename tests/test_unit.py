@@ -6362,6 +6362,7 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
         TERNARY_INFIX = pp.infixNotation(
             pp.pyparsing_common.integer, [(("?", ":"), 3, pp.opAssoc.LEFT),]
         )
+        r = TERNARY_INFIX.parseString("1?1:0?1:0", parseAll=True)
         self.assertParseAndCheckList(
             TERNARY_INFIX, "1?1:0?1:0", [[1, "?", 1, ":", 0, "?", 1, ":", 0]]
         )
