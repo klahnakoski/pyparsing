@@ -535,6 +535,8 @@ class ParseResults(object):
                     inner = internal(t, depth+1)
                     if len(inner) == 0:
                         pass
+                    # elif isinstance(t, ParseResults):
+                    #     output.append(inner)
                     elif len(inner) == 1:
                         output.append(inner[0])
                     else:
@@ -548,7 +550,7 @@ class ParseResults(object):
 
         output = internal(self, 0)
         if isinstance(self.type_for_result, Group):
-            return output[0]
+            return output
         else:
             return output
 
