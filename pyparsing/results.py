@@ -533,14 +533,7 @@ class ParseResults(object):
                 output = []
                 for t in obj:
                     inner = internal(t, depth+1)
-                    if len(inner) == 0:
-                        pass
-                    # elif isinstance(t, ParseResults):
-                    #     output.append(inner)
-                    elif len(inner) == 1:
-                        output.append(inner[0])
-                    else:
-                        output.append(inner)
+                    output.extend(inner)
                 if isinstance(obj.type_for_result, Group):
                     return [output]
                 else:
@@ -584,19 +577,25 @@ class ParseResults(object):
                     name = get_name(obj)
                     if name:
                         # add(open_dict, name, pack(obj.tokens_for_result))
+                        item = pack(obj.tokens_for_result)
                         if isinstance(obj.type_for_result, Group):
-                            add(open_dict, name, pack(obj.tokens_for_result))
-                        elif not obj.type_for_result.modalResults:
-                            # EXPECTING MANY, SO PROVIDE AN ARRAY
-                            add(open_dict, name, pack(obj.tokens_for_result))
+                            if isinstance(item, list):
+                                add(open_dict, name, [item])
+                            else:
+                                item = {k: simpler(v) for k, v in item.items()}
+                                add(open_dict, name, [item])
                         else:
-                            add(open_dict, name, simpler(pack(obj.tokens_for_result)))
+                            if isinstance(item, list):
+                                add(open_dict, name, item)
+                            else:
+                                item = {k: simpler(v) for k, v in item.items()}
+                                add(open_dict, name, [item])
                     elif isinstance(obj.type_for_result, Group):
                         item = pack(obj.tokens_for_result)
-                        # if isinstance(item, dict):
-                        #     for k, v in item.items():
-                        #         add(open_dict, k, v)
-                        # else:
+                        if isinstance(item, list):
+                            pass
+                        else:
+                            item = {k: simpler(v) for k, v in item.items()}
                         open_list.append(item)
                     elif isinstance(obj.type_for_result, Suppress):
                         pass
@@ -617,6 +616,7 @@ class ParseResults(object):
 
         item = pack([self])
         if isinstance(item, dict):
+            item = {k: simpler(v) for k, v in item.items()}
             return item
         elif isinstance(self.type_for_result, Group) or get_name(self):
             # GROUPS ARE EXPECTED TO RETURN A LIST, SO RETURN THAT LIST
@@ -882,20 +882,14 @@ def simpler(v):
 
 
 def add(obj, key, value):
+    if not isinstance(value, list):
+        Log.error("not allowed")
+
     old_v = obj.get(key)
     if old_v is None:
-        if value or value == 0:
-            obj[key] = value
-    elif isinstance(old_v, list):
-        if isinstance(value, list):
-            old_v.extend(value)
-        else:
-            old_v.append(value)
+        obj[key] = value
     else:
-        if isinstance(value, list):
-            obj[key] = [old_v] + value
-        else:
-            obj[key] = [old_v, value]
+        old_v.extend(value)
 
 
 class Annotation(ParseResults):

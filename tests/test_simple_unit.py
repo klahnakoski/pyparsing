@@ -461,7 +461,7 @@ class TestParseAction(PyparsingExpressionTestCase):
 
 class TestResultsModifyingParseAction(PyparsingExpressionTestCase):
     @staticmethod
-    def compute_stats_parse_action(self, t):
+    def compute_stats_parse_action(t):
         # by the time this parse action is called, parsed numeric words
         # have been converted to ints by a previous parse action, so
         # they can be treated as ints
