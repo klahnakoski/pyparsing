@@ -7,7 +7,7 @@ import warnings
 from mo_dots import Data
 
 from pyparsing.exceptions import ParseException
-from pyparsing.core import ParserElement
+from pyparsing.core import ParserElement, CURRENT_WHITE_CHARS
 from pyparsing.enhancement import (
     Combine,
     Dict,
@@ -521,14 +521,14 @@ def nestedExpr(opener="(", closer=")", content=None, ignoreExpr=quotedString.cop
                             + CharsNotIn(
                                 opener
                                 + closer
-                                + "".join(ParserElement.DEFAULT_WHITE_CHARS),
+                                + "".join(CURRENT_WHITE_CHARS),
                                 exact=1,
                             )
                         )
                     ).setParseAction(lambda t: t[0].strip())
                 else:
                     content = empty.copy() + CharsNotIn(
-                        opener + closer + "".join(ParserElement.DEFAULT_WHITE_CHARS)
+                        opener + closer + "".join(CURRENT_WHITE_CHARS)
                     ).setParseAction(lambda t: t[0].strip())
             else:
                 if ignoreExpr is not None:
@@ -537,7 +537,7 @@ def nestedExpr(opener="(", closer=")", content=None, ignoreExpr=quotedString.cop
                             ~ignoreExpr
                             + ~Literal(opener)
                             + ~Literal(closer)
-                            + CharsNotIn(ParserElement.DEFAULT_WHITE_CHARS, exact=1)
+                            + CharsNotIn(CURRENT_WHITE_CHARS, exact=1)
                         )
                     ).setParseAction(lambda t: t[0].strip())
                 else:
@@ -545,7 +545,7 @@ def nestedExpr(opener="(", closer=")", content=None, ignoreExpr=quotedString.cop
                         OneOrMore(
                             ~Literal(opener)
                             + ~Literal(closer)
-                            + CharsNotIn(ParserElement.DEFAULT_WHITE_CHARS, exact=1)
+                            + CharsNotIn(CURRENT_WHITE_CHARS, exact=1)
                         )
                     ).setParseAction(lambda t: t[0].strip())
         else:

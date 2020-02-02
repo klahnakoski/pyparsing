@@ -7,7 +7,7 @@ from datetime import datetime, date
 
 from mo_logs import Log
 
-from pyparsing.cache import packrat_cache_lock, packrat_cache, packrat_cache_stats
+from pyparsing.cache import packrat_cache_lock, packrat_cache_stats
 from pyparsing.exceptions import ParseBaseException, ParseException, ParseFatalException, conditionAsParseAction
 from pyparsing.results import ParseResults
 from pyparsing.utils import PY_3, _MAX_INT, _defaultExceptionDebugAction, _defaultStartDebugAction, \
@@ -17,6 +17,8 @@ from pyparsing.utils import PY_3, _MAX_INT, _defaultExceptionDebugAction, _defau
 SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith, quotedString, And, MatchFirst, Or, Each, Empty, StringEnd, Literal, Token, Group = [None] * 18
 
 DEBUG = False
+DEFAULT_WHITE_CHARS = " \n\t\r"
+CURRENT_WHITE_CHARS = list(DEFAULT_WHITE_CHARS)
 
 @contextmanager
 def default_whitespace(chars):
@@ -32,16 +34,14 @@ def default_whitespace(chars):
         ParserElement.setDefaultWhitespaceChars(" \t")
         OneOrMore(Word(alphas)).parseString("abc def\nghi jkl")  # -> ['abc', 'def']
     """
-    old_value = ParserElement.DEFAULT_WHITE_CHARS
-    ParserElement.DEFAULT_WHITE_CHARS[:] = list(chars)
+    old_value = CURRENT_WHITE_CHARS
+    CURRENT_WHITE_CHARS[:] = list(chars)
     yield
-    ParserElement.DEFAULT_WHITE_CHARS = old_value
+    CURRENT_WHITE_CHARS[:] = old_value
 
-DEFAULT_WHITE_CHARS = " \n\t\r"
 
 class ParserElement(object):
     """Abstract base level parser element class."""
-    DEFAULT_WHITE_CHARS = list(DEFAULT_WHITE_CHARS)
     verbose_stacktrace = False
 
     @staticmethod
@@ -62,14 +62,14 @@ class ParserElement(object):
 
     @property
     def copyDefaultWhiteChars(self):
-        return self.whiteChars is ParserElement.DEFAULT_WHITE_CHARS
+        return self.whiteChars is CURRENT_WHITE_CHARS
 
     @copyDefaultWhiteChars.setter
     def copyDefaultWhiteChars(self, do_copy):
         if do_copy:
-            self.whiteChars = ParserElement.DEFAULT_WHITE_CHARS
+            self.whiteChars = CURRENT_WHITE_CHARS
         else:
-            self.whiteChars = copy(ParserElement.DEFAULT_WHITE_CHARS)
+            self.whiteChars = copy(CURRENT_WHITE_CHARS)
 
     @staticmethod
     def inlineLiteralsUsing(cls):
@@ -155,7 +155,7 @@ class ParserElement(object):
         cpy.parseAction = self.parseAction[:]
         cpy.ignoreExprs = self.ignoreExprs[:]
         if self.copyDefaultWhiteChars:
-            cpy.whiteChars = ParserElement.DEFAULT_WHITE_CHARS
+            cpy.whiteChars = CURRENT_WHITE_CHARS
         return cpy
 
     def setName(self, name):

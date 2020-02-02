@@ -7,7 +7,7 @@ from pyparsing import cache
 from pyparsing.core import (
     ParserElement,
     ParseException,
-    __diag__, DEFAULT_WHITE_CHARS)
+    __diag__, DEFAULT_WHITE_CHARS, CURRENT_WHITE_CHARS)
 from pyparsing.tokens import Keyword
 from pyparsing.utils import __compat__
 
@@ -57,7 +57,7 @@ class reset_pyparsing_context:
     def restore(self):
         # reset pyparsing global state
         if (
-            ParserElement.DEFAULT_WHITE_CHARS
+            CURRENT_WHITE_CHARS
             != self._save_context["default_whitespace"]
         ):
             ParserElement.setDefaultWhitespaceChars(

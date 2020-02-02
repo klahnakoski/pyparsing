@@ -4,7 +4,7 @@ import sre_constants
 import warnings
 
 from pyparsing.exceptions import ParseException
-from pyparsing.core import ParserElement
+from pyparsing.core import ParserElement, CURRENT_WHITE_CHARS
 from pyparsing.results import ParseResults
 from pyparsing.utils import _MAX_INT, _ustr, alphanums, basestring, col, printables, _bslash
 
@@ -962,7 +962,7 @@ class LineEnd(_PositionToken):
     """
     def __init__(self):
         super(LineEnd, self).__init__()
-        self.setWhitespaceChars([w for w in ParserElement.DEFAULT_WHITE_CHARS if w!='\n'])
+        self.setWhitespaceChars([w for w in CURRENT_WHITE_CHARS if w!='\n'])
         self.errmsg = "Expected end of line"
 
     def parseImpl(self, instring, loc, doActions=True):

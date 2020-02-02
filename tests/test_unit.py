@@ -8,18 +8,18 @@
 #
 
 import datetime
+import json
 import sys
 from copy import copy
 from io import StringIO
 from unittest import TestCase
-import json
 
 import pyparsing as pp
 from examples.jsonParser import jsonObject
 from pyparsing import ParseException
-from pyparsing import ParserElement
 from pyparsing import testing as ppt
 from pyparsing.cache import enablePackrat
+from pyparsing.core import CURRENT_WHITE_CHARS
 from tests.json_parser_tests import test1, test2, test3, test4, test5
 
 # see which Python implementation we are running
@@ -91,7 +91,7 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
     def testUpdateDefaultWhitespace(self):
         import pyparsing as pp
 
-        prev_default_whitespace_chars = copy(pp.ParserElement.DEFAULT_WHITE_CHARS)
+        prev_default_whitespace_chars = copy(CURRENT_WHITE_CHARS)
         try:
             pp.dblQuotedString.copyDefaultWhiteChars = False
             pp.ParserElement.setDefaultWhitespaceChars(" \t")
@@ -1731,7 +1731,6 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
             matchPreviousExpr,
             Word,
             nums,
-            ParserElement,
         )
 
         if packrat_enabled:
