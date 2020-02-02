@@ -642,37 +642,47 @@ class ParserElement(object):
 
     def parseString(self, instring, parseAll=False):
         """
-        Execute the parse expression with the given string.
-        This is the main interface to the client code, once the complete
-        expression has been built.
+        Parse a string with respect to the parser definition. This function is intended as the primary interface to the
+        client code.
 
-        Returns the parsed data as a :class:`ParseResults` object, which may be
-        accessed as a list, or as a dict or object with attributes if the given parser
-        includes results names.
+        :param instring: The input string to be parsed.
+        :param parseAll: If set, the entire input string must match the grammar.
+        :raises ParseException: Raised if ``parseAll`` is set and the input string does not match the whole grammar.
+        :returns: the parsed data as a :class:`ParseResults` object, which may be accessed as a `list`, a `dict`, or
+          an object with attributes if the given parser includes results names.
 
-        If you want the grammar to require that the entire input string be
-        successfully parsed, then set ``parseAll`` to True (equivalent to ending
-        the grammar with ``StringEnd()``).
+        If the input string is required to match the entire grammar, ``parseAll`` flag must be set to True. This
+        is also equivalent to ending the grammar with ``StringEnd()``.
 
-        Note: ``parseString`` implicitly calls ``expandtabs()`` on the input string,
-        in order to report proper column numbers in parse actions.
-        If the input string contains tabs and
-        the grammar uses parse actions that use the ``loc`` argument to index into the
-        string being parsed, you can ensure you have a consistent view of the input
-        string by:
+        To report proper column numbers, ``parseString`` operates on a copy of the input string where all tabs are
+        converted to spaces (8 spaces per tab, as per the default in ``string.expandtabs``). If the input string
+        contains tabs and the grammar uses parse actions that use the ``loc`` argument to index into the string
+        being parsed, one can ensure a consistent view of the input string by doing one of the following:
 
-        - calling ``parseWithTabs`` on your grammar before calling ``parseString``
-          (see :class:`parseWithTabs`)
-        - define your parse action using the full ``(s, loc, toks)`` signature, and
-          reference the input string using the parse action's ``s`` argument
-        - explictly expand the tabs in your input string before calling
-          ``parseString``
+        - calling ``parseWithTabs`` on your grammar before calling ``parseString`` (see :class:`parseWithTabs`),
+        - define your parse action using the full ``(s,loc,toks)`` signature, and reference the input string using the
+          parse action's ``s`` argument, or
+        - explicitly expand the tabs in your input string before calling ``parseString``.
 
-        Example::
+        Examples:
 
-            Word('a').parseString('aaaaabaaa')  # -> ['aaaaa']
-            Word('a').parseString('aaaaabaaa', parseAll=True)  # -> Exception: Expected end of text
+        By default, partial matches are OK.
+
+        >>> res = Word('a').parseString('aaaaabaaa')
+        >>> print(res)
+        ['aaaaa']
+
+        The parsing behavior varies by the inheriting class of this abstract class. Please refer to the children
+        directly to see more examples.
+
+        It raises an exception if parseAll flag is set and instring does not match the whole grammar.
+
+        >>> res = Word('a').parseString('aaaaabaaa', parseAll=True)
+        Traceback (most recent call last):
+        ...
+        pyparsing.ParseException: Expected end of text, found 'b'  (at char 5), (line:1, col:6)
         """
+
         ParserElement.resetCache()
         if not self.streamlined:
             self.streamline()
@@ -948,7 +958,7 @@ class ParserElement(object):
         if other is Ellipsis:
             other = (0, None)
         elif isinstance(other, tuple) and other[:1] == (Ellipsis,):
-            other = ((0, ) + other[1:] + (None,))[:2]
+            other = ((0,) + other[1:] + (None,))[:2]
 
         if isinstance(other, int):
             minElements, optElements = other, 0
@@ -968,23 +978,33 @@ class ParserElement(object):
                 minElements, optElements = other
                 optElements -= minElements
             else:
-                raise TypeError("cannot multiply 'ParserElement' and ('%s', '%s') objects", type(other[0]), type(other[1]))
+                raise TypeError(
+                    "cannot multiply 'ParserElement' and ('%s', '%s') objects",
+                    type(other[0]),
+                    type(other[1]),
+                )
         else:
-            raise TypeError("cannot multiply 'ParserElement' and '%s' objects", type(other))
+            raise TypeError(
+                "cannot multiply 'ParserElement' and '%s' objects", type(other)
+            )
 
         if minElements < 0:
             raise ValueError("cannot multiply ParserElement by negative value")
         if optElements < 0:
-            raise ValueError("second tuple value must be greater or equal to first tuple value")
+            raise ValueError(
+                "second tuple value must be greater or equal to first tuple value"
+            )
         if minElements == optElements == 0:
             raise ValueError("cannot multiply ParserElement by 0 or (0, 0)")
 
         if optElements:
+
             def makeOptionalList(n):
                 if n > 1:
                     return Optional(self + makeOptionalList(n - 1))
                 else:
                     return Optional(self)
+
             if minElements:
                 if minElements == 1:
                     ret = self + makeOptionalList(optElements)
@@ -1050,7 +1070,7 @@ class ParserElement(object):
     def __iter__(self):
         # must implement __iter__ to override legacy use of sequential access to __getitem__ to
         # iterate over a sequence
-        raise TypeError('%r object is not iterable' % self.__class__.__name__)
+        raise TypeError("%r object is not iterable" % self.__class__.__name__)
 
     def __getitem__(self, key):
         """
@@ -1214,7 +1234,11 @@ class ParserElement(object):
         name created for the :class:`Word` expression without calling ``setName`` is ``"W:(ABCD...)"``.
         """
         if flag:
-            self.setDebugActions(_defaultStartDebugAction, _defaultSuccessDebugAction, _defaultExceptionDebugAction)
+            self.setDebugActions(
+                _defaultStartDebugAction,
+                _defaultSuccessDebugAction,
+                _defaultExceptionDebugAction,
+            )
         else:
             self.debug = False
         return self

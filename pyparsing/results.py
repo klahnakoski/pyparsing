@@ -300,6 +300,8 @@ class ParseResults(object):
                 name = get_name(r)
                 if name:
                     yield name, r
+                elif isinstance(r.type_for_result, Group):
+                    continue
                 else:
                     for k, v in r.iteritems():
                         yield k, v

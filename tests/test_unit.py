@@ -12,6 +12,7 @@ import sys
 from copy import copy
 from io import StringIO
 from unittest import TestCase
+import json
 
 import pyparsing as pp
 from examples.jsonParser import jsonObject
@@ -343,6 +344,13 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
                 ("test.foo", "bar"),
             ],
         )
+
+    def testParseJSONDataSimple(self):
+        jsons = json.dumps({"glossary": {"title": "example glossary"}})
+        expected = [["glossary", [["title", "example glossary"]]]]
+        result = jsonObject.parseString(jsons)
+        result.pprint()
+        self.assertEqual(result.asList(), expected, "failed test {}".format(jsons))
 
     def testParseJSONData(self):
         expected = [
