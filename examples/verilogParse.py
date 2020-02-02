@@ -65,6 +65,8 @@ import time
 import pprint
 import sys
 
+from pyparsing.cache import enablePackrat
+
 __version__ = "1.0.11"
 
 from pyparsing import (
@@ -100,7 +102,7 @@ packratOn = False
 
 if usePackrat:
     try:
-        ParserElement.enablePackrat()
+        enablePackrat()
     except Exception:
         pass
     else:

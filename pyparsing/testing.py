@@ -3,6 +3,7 @@
 from contextlib import contextmanager
 from unittest import TestCase
 
+from pyparsing import cache
 from pyparsing.core import (
     ParserElement,
     ParseException,
@@ -43,7 +44,7 @@ class reset_pyparsing_context:
         self._save_context[
             "literal_string_class"
         ] = ParserElement._literalStringClass
-        self._save_context["packrat_enabled"] = ParserElement._packratEnabled
+        self._save_context["packrat_enabled"] = cache.packrat_enabled
         self._save_context["packrat_parse"] = ParserElement._parse
         self._save_context["__diag__"] = {
             name: getattr(__diag__, name) for name in __diag__._all_names
@@ -68,7 +69,7 @@ class reset_pyparsing_context:
         )
         for name, value in self._save_context["__diag__"].items():
             (__diag__.enable if value else __diag__.disable)(name)
-        ParserElement._packratEnabled = self._save_context["packrat_enabled"]
+        packrat_enabled = self._save_context["packrat_enabled"]
         ParserElement._parse = self._save_context["packrat_parse"]
         __compat__.collect_all_And_tokens = self._save_context["__compat__"]
 

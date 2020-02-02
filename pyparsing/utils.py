@@ -29,14 +29,6 @@ except ImportError:
     from collections import Iterable
     from collections import MutableMapping, Mapping, deque
 
-try:
-    from collections import OrderedDict as _OrderedDict
-except ImportError:
-    try:
-        from ordereddict import OrderedDict as _OrderedDict
-    except ImportError:
-        _OrderedDict = None
-
 system_version = tuple(sys.version_info)[:3]
 PY_3 = system_version[0] == 3
 if PY_3:

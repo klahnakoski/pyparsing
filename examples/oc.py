@@ -71,8 +71,9 @@ The following is a description of the OC grammar:
 """
 
 from pyparsing import *
+from pyparsing.cache import enablePackrat
 
-ParserElement.enablePackrat()
+enablePackrat()
 
 LPAR, RPAR, LBRACK, RBRACK, LBRACE, RBRACE, SEMI, COMMA = map(Suppress, "()[]{};,")
 INT, CHAR, WHILE, DO, IF, ELSE, RETURN = map(

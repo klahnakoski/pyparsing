@@ -19,6 +19,7 @@ from examples.jsonParser import jsonObject
 from pyparsing import ParseException
 from pyparsing import ParserElement
 from pyparsing import testing as ppt
+from pyparsing.cache import enablePackrat
 from tests.json_parser_tests import test1, test2, test3, test4, test5
 
 # see which Python implementation we are running
@@ -1733,7 +1734,7 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
             ParserElement,
         )
 
-        if ParserElement._packratEnabled:
+        if packrat_enabled:
             print("skipping this test, not compatible with packratting")
             return
 
@@ -5951,7 +5952,7 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
             return t[0] / t[1]
 
         expr.addParseAction(divide_args)
-        pp.ParserElement.enablePackrat()
+        enablePackrat()
         print()
 
         try:
@@ -6675,7 +6676,7 @@ class PickleTest_Greeting:
 
 class Test3_EnablePackratParsing(TestCase):
     def runTest(self):
-        ParserElement.enablePackrat()
+        enablePackrat()
 
         # SAVE A NEW SUITE CONTEXT
         Test2_WithoutPackrat.suite_context = ppt.reset_pyparsing_context()

@@ -12,6 +12,7 @@ from pyparsing import MatchFirst, alphas, alphanums, Combine, Word
 from pyparsing import QuotedString, CharsNotIn, Optional, Group, ZeroOrMore
 from pyparsing import oneOf, delimitedList, restOfLine, cStyleComment
 from pyparsing import infixNotation, opAssoc, Regex, nums
+from pyparsing.cache import enablePackrat
 
 
 class BigQueryViewParser:
@@ -57,7 +58,7 @@ class BigQueryViewParser:
         if cls._parser is not None:
             return cls._parser
 
-        ParserElement.enablePackrat()
+        enablePackrat()
 
         LPAR, RPAR, COMMA, LBRACKET, RBRACKET, LT, GT = map(Suppress, "(),[]<>")
         ungrouped_select_stmt = Forward().setName("select statement")

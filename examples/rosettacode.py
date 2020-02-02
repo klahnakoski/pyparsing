@@ -5,6 +5,8 @@
 #
 # Copyright Paul McGuire, 2019
 #
+from pyparsing.cache import enablePackrat
+
 BNF = """
     stmt_list           =   {stmt} ;
 
@@ -36,7 +38,7 @@ BNF = """
 
 import pyparsing as pp
 
-pp.ParserElement.enablePackrat()
+enablePackrat()
 
 LBRACE, RBRACE, LPAR, RPAR, SEMI = map(pp.Suppress, "{}();")
 EQ = pp.Literal("=")

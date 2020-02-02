@@ -936,7 +936,7 @@ def infixNotation(baseExpr, opList, lpar=Suppress("("), rpar=Suppress(")")):
 
     Note: if you define a deep operator list, you may see performance
     issues when using infixNotation. See
-    :class:`ParserElement.enablePackrat` for a mechanism to potentially
+    :class:`enablePackrat()` for a mechanism to potentially
     improve your parser performance.
 
     Parameters:

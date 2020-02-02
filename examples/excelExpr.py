@@ -25,8 +25,9 @@ from pyparsing import (
     ParserElement,
     pyparsing_common as ppc,
 )
+from pyparsing.cache import enablePackrat
 
-ParserElement.enablePackrat()
+enablePackrat()
 
 EQ, LPAR, RPAR, COLON, COMMA = map(Suppress, "=():,")
 EXCL, DOLLAR = map(Literal, "!$")

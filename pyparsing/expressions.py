@@ -219,17 +219,8 @@ class And(ParseExpression):
         if isinstance(other, And):
             return And(self.exprs + other.exprs)
         else:
+            # return And(self.exprs + [self.normalize(other)])
             return And([self, self.normalize(other)])
-
-    def __radd__(self, other):
-        if other is Ellipsis:
-            return SkipTo(self)("_skipped*") + self
-
-        if isinstance(other, And):
-            return And(other.exprs+self.exprs)
-        else:
-            return self.normalize(other) + self
-
 
     def __iadd__(self, other):
         return self.append(self.normalize(other))  # And([self, other])

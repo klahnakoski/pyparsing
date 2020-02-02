@@ -6,8 +6,9 @@
 #
 import sys
 from pyparsing import *
+from pyparsing.cache import enablePackrat
 
-ParserElement.enablePackrat()
+enablePackrat()
 
 LPAR, RPAR, COMMA = map(Suppress, "(),")
 DOT, STAR = map(Literal, ".*")

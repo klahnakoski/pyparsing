@@ -354,7 +354,7 @@ methods for code to use are:
   performance enhancement, known as "packrat parsing".  packrat parsing is
   disabled by default, since it may conflict with some user programs that use
   parse actions.  To activate the packrat feature, your
-  program must call the class method ParserElement.enablePackrat(). For best
+  program must call the class method enablePackrat()(). For best
   results, call enablePackrat() immediately after importing pyparsing.
 
 

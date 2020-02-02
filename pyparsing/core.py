@@ -1,17 +1,17 @@
 # encoding: utf-8
-from contextlib import contextmanager
 import copy
+import warnings
+from contextlib import contextmanager
 from copy import copy
 from datetime import datetime, date
-import types
-import warnings
 
 from mo_logs import Log
 
+from pyparsing.cache import packrat_cache_lock, packrat_cache, packrat_cache_stats
 from pyparsing.exceptions import ParseBaseException, ParseException, ParseFatalException, conditionAsParseAction
 from pyparsing.results import ParseResults
-from pyparsing.utils import PY_3, RLock, _MAX_INT, _OrderedDict, _defaultExceptionDebugAction, _defaultStartDebugAction, \
-    _defaultSuccessDebugAction, _trim_arity, _ustr, basestring, deque, __diag__
+from pyparsing.utils import PY_3, _MAX_INT, _defaultExceptionDebugAction, _defaultStartDebugAction, \
+    _defaultSuccessDebugAction, _trim_arity, _ustr, basestring, __diag__
 
 # import later
 SkipTo, ZeroOrMore, OneOrMore, Optional, NotAny, Suppress, _flatten, replaceWith, quotedString, And, MatchFirst, Or, Each, Empty, StringEnd, Literal, Token, Group = [None] * 18
@@ -471,6 +471,38 @@ class ParserElement(object):
 
         return loc, retTokens
 
+    _parse = _parseNoCache
+
+    # this method gets repeatedly called during backtracking with the same arguments -
+    # we can cache these arguments and save ourselves the trouble of re-parsing the contained expression
+    def _parseCache(self, instring, loc, doActions=True, callPreParse=True):
+        HIT, MISS = 0, 1
+        lookup = (self, instring, loc, callPreParse, doActions)
+        with packrat_cache_lock:
+            _cache = cache.packrat_cache
+            value = _cache.get(lookup)
+            if value is None:
+                packrat_cache_stats[MISS] += 1
+                try:
+                    loc, tok = self._parseNoCache(instring, loc, doActions, callPreParse)
+                    if not isinstance(tok, ParseResults):
+                        Log.error(
+                            "expecting prase results from {{type}}",
+                            type=value[1].__class__.__name__,
+                        )
+                except ParseBaseException as pe:
+                    # cache a copy of the exception, without the traceback
+                    _cache.set(lookup, pe.__class__(*pe.args))
+                    raise
+                else:
+                    _cache.set(lookup, (loc, copy(tok)))
+                    return loc, tok
+            else:
+                packrat_cache_stats[HIT] += 1
+                if isinstance(value, Exception):
+                    raise value
+                return value[0], copy(value[1])
+
     def tryParse(self, instring, loc):
         try:
             return self._parse(instring, loc, doActions=False)[0]
@@ -485,160 +517,6 @@ class ParserElement(object):
         else:
             return True
 
-    class _UnboundedCache(object):
-        def __init__(self):
-            cache = {}
-            self.not_in_cache = not_in_cache = object()
-
-            def get(self, key):
-                return cache.get(key, not_in_cache)
-
-            def set(self, key, value):
-                cache[key] = value
-
-            def clear(self):
-                cache.clear()
-
-            def cache_len(self):
-                return len(cache)
-
-            self.get = types.MethodType(get, self)
-            self.set = types.MethodType(set, self)
-            self.clear = types.MethodType(clear, self)
-            self.__len__ = types.MethodType(cache_len, self)
-
-    if _OrderedDict is not None:
-        class _FifoCache(object):
-            def __init__(self, size):
-                self.not_in_cache = not_in_cache = object()
-
-                cache = _OrderedDict()
-
-                def get(self, key):
-                    return cache.get(key, not_in_cache)
-
-                def set(self, key, value):
-                    cache[key] = value
-                    while len(cache) > size:
-                        try:
-                            cache.popitem(False)
-                        except KeyError:
-                            pass
-
-                def clear(self):
-                    cache.clear()
-
-                def cache_len(self):
-                    return len(cache)
-
-                self.get = types.MethodType(get, self)
-                self.set = types.MethodType(set, self)
-                self.clear = types.MethodType(clear, self)
-                self.__len__ = types.MethodType(cache_len, self)
-
-    else:
-        class _FifoCache(object):
-            def __init__(self, size):
-                self.not_in_cache = not_in_cache = object()
-
-                cache = {}
-                key_fifo = deque([], size)
-
-                def get(self, key):
-                    return cache.get(key, not_in_cache)
-
-                def set(self, key, value):
-                    cache[key] = value
-                    while len(key_fifo) > size:
-                        cache.pop(key_fifo.popleft(), None)
-                    key_fifo.append(key)
-
-                def clear(self):
-                    cache.clear()
-                    key_fifo.clear()
-
-                def cache_len(self):
-                    return len(cache)
-
-                self.get = types.MethodType(get, self)
-                self.set = types.MethodType(set, self)
-                self.clear = types.MethodType(clear, self)
-                self.__len__ = types.MethodType(cache_len, self)
-
-    # argument cache for optimizing repeated calls when backtracking through recursive expressions
-    packrat_cache = {} # this is set later by enabledPackrat(); this is here so that resetCache() doesn't fail
-    packrat_cache_lock = RLock()
-    packrat_cache_stats = [0, 0]
-
-    # this method gets repeatedly called during backtracking with the same arguments -
-    # we can cache these arguments and save ourselves the trouble of re-parsing the contained expression
-    def _parseCache(self, instring, loc, doActions=True, callPreParse=True):
-        HIT, MISS = 0, 1
-        lookup = (self, instring, loc, callPreParse, doActions)
-        with ParserElement.packrat_cache_lock:
-            cache = ParserElement.packrat_cache
-            value = cache.get(lookup)
-            if value is cache.not_in_cache:
-                ParserElement.packrat_cache_stats[MISS] += 1
-                try:
-                    loc, tok = self._parseNoCache(instring, loc, doActions, callPreParse)
-                    if not isinstance(tok, ParseResults):
-                        Log.error("expecting prase results from {{type}}", type=value[1].__class__.__name__)
-                except ParseBaseException as pe:
-                    # cache a copy of the exception, without the traceback
-                    cache.set(lookup, pe.__class__(*pe.args))
-                    raise
-                else:
-                    cache.set(lookup, (loc, copy(tok)))
-                    return loc, tok
-            else:
-                ParserElement.packrat_cache_stats[HIT] += 1
-                if isinstance(value, Exception):
-                    raise value
-                return value[0], copy(value[1])
-
-    _parse = _parseNoCache
-
-    @staticmethod
-    def resetCache():
-        ParserElement.packrat_cache.clear()
-        ParserElement.packrat_cache_stats[:] = [0] * len(ParserElement.packrat_cache_stats)
-
-    _packratEnabled = False
-    @staticmethod
-    def enablePackrat(cache_size_limit=128):
-        """Enables "packrat" parsing, which adds memoizing to the parsing logic.
-           Repeated parse attempts at the same string location (which happens
-           often in many complex grammars) can immediately return a cached value,
-           instead of re-executing parsing/validating code.  Memoizing is done of
-           both valid results and parsing exceptions.
-
-           Parameters:
-
-           - cache_size_limit - (default= ``128``) - if an integer value is provided
-             will limit the size of the packrat cache; if None is passed, then
-             the cache size will be unbounded; if 0 is passed, the cache will
-             be effectively disabled.
-
-           This speedup may break existing programs that use parse actions that
-           have side-effects.  For this reason, packrat parsing is disabled when
-           you first import pyparsing.  To activate the packrat feature, your
-           program must call the class method :class:`ParserElement.enablePackrat`.
-           For best results, call ``enablePackrat()`` immediately after
-           importing pyparsing.
-
-           Example::
-
-               import pyparsing
-               pyparsing.ParserElement.enablePackrat()
-        """
-        if not ParserElement._packratEnabled:
-            ParserElement._packratEnabled = True
-            if cache_size_limit is None:
-                ParserElement.packrat_cache = ParserElement._UnboundedCache()
-            else:
-                ParserElement.packrat_cache = ParserElement._FifoCache(cache_size_limit)
-            ParserElement._parse = ParserElement._parseCache
 
     def parseString(self, instring, parseAll=False):
         """
@@ -683,7 +561,7 @@ class ParserElement(object):
         pyparsing.ParseException: Expected end of text, found 'b'  (at char 5), (line:1, col:6)
         """
 
-        ParserElement.resetCache()
+        cache.resetCache()
         if not self.streamlined:
             self.streamline()
             # ~ self.saveAsList = True
@@ -748,7 +626,7 @@ class ParserElement(object):
         loc = 0
         preparseFn = self.preParse
         parseFn = self._parse
-        ParserElement.resetCache()
+        cache.resetCache()
         matches = 0
         try:
             while loc <= instrlen and matches < maxMatches:
@@ -1362,6 +1240,6 @@ class _PendingSkip(ParserElement):
 
 # export
 
-from pyparsing import results
+from pyparsing import results, cache
 
 results.ParserElement = ParserElement

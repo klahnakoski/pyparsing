@@ -42,8 +42,9 @@
 """
 import pyparsing as pp
 from pyparsing import pyparsing_common as ppc
+from pyparsing.cache import enablePackrat
 
-pp.ParserElement.enablePackrat()
+enablePackrat()
 
 # keywords
 keywords = (
