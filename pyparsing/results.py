@@ -531,7 +531,7 @@ class ParseResults(object):
 
         def internal(obj, depth):
             # RETURN AN OPEN LIST
-            if depth > 40:
+            if depth > 60:
                 Log.warning("deep!")
 
             if isinstance(obj, Annotation):

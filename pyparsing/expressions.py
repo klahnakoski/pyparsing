@@ -212,6 +212,25 @@ class And(ParseExpression):
 
         return loc, ParseResults(self, acc)
 
+    def __add__(self, other):
+        if other is Ellipsis:
+            return _PendingSkip(self)
+
+        if isinstance(other, And):
+            return And(self.exprs + other.exprs)
+        else:
+            return And([self, self.normalize(other)])
+
+    def __radd__(self, other):
+        if other is Ellipsis:
+            return SkipTo(self)("_skipped*") + self
+
+        if isinstance(other, And):
+            return And(other.exprs+self.exprs)
+        else:
+            return self.normalize(other) + self
+
+
     def __iadd__(self, other):
         return self.append(self.normalize(other))  # And([self, other])
 
@@ -407,6 +426,27 @@ class MatchFirst(ParseExpression):
                 raise maxException
             else:
                 raise ParseException(instring, loc, "no defined alternatives to match", self)
+
+    def __or__(self, other):
+        if other is Ellipsis:
+            return _PendingSkip(self, must_skip=True)
+
+        if isinstance(other, MatchFirst):
+            return MatchFirst(self.exprs + other.exprs)
+        else:
+            return MatchFirst([self, self.normalize(other)])
+
+    def __ror__(self, other):
+        if isinstance(other, MatchFirst):
+            return MatchFirst(other.exprs + self.exprs)
+        else:
+            return self.normalize(other) | self
+
+    def __xor__(self, other):
+        return Or([self, self.normalize(other)])
+
+    def __rxor__(self, other):
+        return self.normalize(other) ^ self
 
     def __ior__(self, other):
         return self.append(self.normalize(other))  # MatchFirst([self, other])
