@@ -4322,7 +4322,8 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
         rsp = (
             "username=goat; errors={username=[already taken, too short]}; empty_field="
         )
-        result_dict = response.parseString(rsp).asDict()
+        result = response.parseString(rsp)
+        result_dict = result.asDict()
         print(result_dict)
         self.assertEqual(
             result_dict["username"],

@@ -295,16 +295,18 @@ class ParseResults(object):
             yield v
 
     def iteritems(self):
+        output = {}
         for r in self.tokens_for_result:
             if isinstance(r, ParseResults):
                 name = get_name(r)
                 if name:
-                    yield name, r
-                elif isinstance(r.type_for_result, Group):
+                    add(output, name, [r])
+                if isinstance(r.type_for_result, Group):
                     continue
-                else:
-                    for k, v in r.iteritems():
-                        yield k, v
+                for k, v in r.iteritems():
+                    add(output, k, [v])
+        for k, v in output.items():
+            yield k, v
 
     if PY_3:
         keys = iterkeys
@@ -529,14 +531,16 @@ class ParseResults(object):
 
         def internal(obj, depth):
             # RETURN AN OPEN LIST
-            if depth > 20:
+            if depth > 40:
                 Log.warning("deep!")
 
             if isinstance(obj, Annotation):
                 return []
             elif isinstance(obj, ParseResults):
+                if obj.replaced_tokens:
+                    return [simpler(internal(o, depth+1)) for o in obj.replaced_tokens]
                 output = []
-                for t in obj:
+                for t in obj.tokens_for_result:
                     inner = internal(t, depth+1)
                     output.extend(inner)
                 if isinstance(obj.type_for_result, Group):
@@ -547,10 +551,10 @@ class ParseResults(object):
                 return [obj]
 
         output = internal(self, 0)
-        if isinstance(self.type_for_result, Group):
-            return simpler(output)
-        else:
-            return output
+        # if isinstance(self.type_for_result, Group):
+        #     return simpler(output)
+        # else:
+        return output
 
     def asDict(self):
         """
@@ -584,10 +588,8 @@ class ParseResults(object):
                         # add(open_dict, name, pack(obj.tokens_for_result))
                         od, ol = pack(obj.tokens_for_result)
                         if isinstance(obj.type_for_result, Group):
+                            item = {k: s for k, v in od.items() for s in [simpler(v)] if s is not None} or ol
                             add(open_dict, name, [ol])
-                            for k, v in od.items():
-                                add(open_dict, k, v)
-                            item = {k: simpler(v) for k, v in open_dict.items()}
                             open_list.append(item)
                         else:
                             add(open_dict, name, ol)
@@ -595,9 +597,8 @@ class ParseResults(object):
                                 add(open_dict, k, v)
                     elif isinstance(obj.type_for_result, Group):
                         od, ol = pack(obj.tokens_for_result)
-                        for k, v in od.items():
-                            add(open_dict, k, v)
-                        open_list.append(ol)
+                        item = {k: s for k, v in od.items() for s in [simpler(v)] if s is not None} or ol
+                        open_list.append(item)
                     elif isinstance(obj.type_for_result, Suppress):
                         pass
                     else:
@@ -615,7 +616,7 @@ class ParseResults(object):
             item = {k: simpler(v) for k, v in od.items()}
             return item
         elif isinstance(self.type_for_result, Group) or get_name(self):
-            return ol
+            return ol[0]
         else:
             return ol
 

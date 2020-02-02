@@ -39,6 +39,7 @@ from pyparsing.tokens import (
     Word,
     _L,
     _escapeRegexRangeChars,
+    QuotedString
 )
 from pyparsing.utils import (
     Iterable,
@@ -61,6 +62,22 @@ And, MatchFirst = [None] * 2
 #
 # global helpers
 #
+
+
+dblQuotedString = Combine(
+    Regex(r'"(?:[^"\n\r\\]|(?:"")|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*') + '"'
+).setName("string enclosed in double quotes")
+sglQuotedString = Combine(
+    Regex(r"'(?:[^'\n\r\\]|(?:'')|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*") + "'"
+).setName("string enclosed in single quotes")
+quotedString = Combine(
+    Regex(r'"(?:[^"\n\r\\]|(?:"")|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*') + '"'
+    | Regex(r"'(?:[^'\n\r\\]|(?:'')|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*") + "'"
+).setName("quotedString using single or double quotes")
+unicodeString = Combine(_L("u") + quotedString.copy()).setName("unicode string literal")
+
+
+
 def delimitedList(expr, delim=",", combine=False):
     """Helper to define a delimited list of expressions - the delimiter
     defaults to ','. By default, the list elements and delimiters can
@@ -1057,18 +1074,6 @@ def infixNotation(baseExpr, opList, lpar=Suppress("("), rpar=Suppress(")")):
 operatorPrecedence = infixNotation
 """(Deprecated) Former name of :class:`infixNotation`, will be
 dropped in a future release."""
-
-dblQuotedString = Combine(
-    Regex(r'"(?:[^"\n\r\\]|(?:"")|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*') + '"'
-).setName("string enclosed in double quotes")
-sglQuotedString = Combine(
-    Regex(r"'(?:[^'\n\r\\]|(?:'')|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*") + "'"
-).setName("string enclosed in single quotes")
-quotedString = Combine(
-    Regex(r'"(?:[^"\n\r\\]|(?:"")|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*') + '"'
-    | Regex(r"'(?:[^'\n\r\\]|(?:'')|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*") + "'"
-).setName("quotedString using single or double quotes")
-unicodeString = Combine(_L("u") + quotedString.copy()).setName("unicode string literal")
 
 
 def indentedBlock(blockStatementExpr, indentStack, indent=True):
