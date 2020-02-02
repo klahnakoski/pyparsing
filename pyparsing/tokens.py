@@ -95,9 +95,6 @@ class _SingleCharLiteral(Literal):
             return loc + 1,  ParseResults(self, [self.match])
         raise ParseException(instring, loc, self.errmsg, self)
 
-_L = Literal
-ParserElement._literalStringClass = Literal
-
 
 class Keyword(Token):
     """Token to exactly match a specified string as a keyword, that is,
@@ -1058,6 +1055,7 @@ from pyparsing import core, enhancement
 core.Empty = Empty
 core.StringEnd = StringEnd
 core.Literal = Literal
+core.default_literal(Literal)
 core.Token = Token
 
 enhancement.Token = Token

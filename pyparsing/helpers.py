@@ -37,7 +37,7 @@ from pyparsing.tokens import (
     StringStart,
     White,
     Word,
-    _L,
+    Literal,
     _escapeRegexRangeChars,
     QuotedString
 )
@@ -74,7 +74,7 @@ quotedString = Combine(
     Regex(r'"(?:[^"\n\r\\]|(?:"")|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*') + '"'
     | Regex(r"'(?:[^'\n\r\\]|(?:'')|(?:\\(?:[^x]|x[0-9a-fA-F]+)))*") + "'"
 ).setName("quotedString using single or double quotes")
-unicodeString = Combine(_L("u") + quotedString.copy()).setName("unicode string literal")
+unicodeString = Combine(Literal("u") + quotedString.copy()).setName("unicode string literal")
 
 
 
@@ -750,7 +750,7 @@ def _makeTags(tagStr, xml, suppress_LT=Suppress("<"), suppress_GT=Suppress(">"))
             )
             + suppress_GT
         )
-    closeTag = Combine(_L("</") + tagStr + ">", adjacent=False)
+    closeTag = Combine(Literal("</") + tagStr + ">", adjacent=False)
 
     openTag.setName("<%s>" % resname)
     # add start<tagname> results name in parse action now that ungrouped names are not reported at two levels

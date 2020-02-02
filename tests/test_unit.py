@@ -16,10 +16,10 @@ from unittest import TestCase
 
 import pyparsing as pp
 from examples.jsonParser import jsonObject
-from pyparsing import ParseException
+from pyparsing import ParseException, cache
 from pyparsing import testing as ppt
 from pyparsing.cache import enablePackrat
-from pyparsing.core import CURRENT_WHITE_CHARS
+from pyparsing.core import CURRENT_WHITE_CHARS, default_literal, CURRENT_LITERAL
 from tests.json_parser_tests import test1, test2, test3, test4, test5
 
 # see which Python implementation we are running
@@ -1733,7 +1733,7 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
             nums,
         )
 
-        if packrat_enabled:
+        if cache.packrat_enabled:
             print("skipping this test, not compatible with packratting")
             return
 
@@ -4988,7 +4988,7 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
         #
         # self.assertTrue(success, "bad handling of syntax error")
 
-    def testInlineLiteralsUsing(self):
+    def test_default_literal(self):
 
         from pyparsing import (
             ParserElement,
@@ -5004,60 +5004,60 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
 
         wd = Word(alphas)
 
-        ParserElement.inlineLiteralsUsing(Suppress)
+        default_literal(Suppress)
         result = (wd + "," + wd + oneOf("! . ?")).parseString("Hello, World!")
-        self.assertEqual(len(result), 3, "inlineLiteralsUsing(Suppress) failed!")
+        self.assertEqual(len(result), 3, "default_literal(Suppress) failed!")
 
-        ParserElement.inlineLiteralsUsing(Literal)
+        default_literal(Literal)
         result = (wd + "," + wd + oneOf("! . ?")).parseString("Hello, World!")
-        self.assertEqual(len(result), 4, "inlineLiteralsUsing(Literal) failed!")
+        self.assertEqual(len(result), 4, "default_literal(Literal) failed!")
 
-        ParserElement.inlineLiteralsUsing(CaselessKeyword)
+        default_literal(CaselessKeyword)
         # WAS:
         # result = ("SELECT" + wd + "FROM" + wd).parseString("select color from colors")
         # self.assertEqual(result.asList(), "SELECT color FROM colors".split(),
-        #                  "inlineLiteralsUsing(CaselessKeyword) failed!")
+        #                  "default_literal(CaselessKeyword) failed!")
         self.assertParseAndCheckList(
             "SELECT" + wd + "FROM" + wd,
             "select color from colors",
             expected_list=["SELECT", "color", "FROM", "colors"],
-            msg="inlineLiteralsUsing(CaselessKeyword) failed!",
+            msg="default_literal(CaselessKeyword) failed!",
         )
 
-        ParserElement.inlineLiteralsUsing(CaselessLiteral)
+        default_literal(CaselessLiteral)
         # result = ("SELECT" + wd + "FROM" + wd).parseString("select color from colors")
         # self.assertEqual(result.asList(), "SELECT color FROM colors".split(),
-        #                  "inlineLiteralsUsing(CaselessLiteral) failed!")
+        #                  "default_literal(CaselessLiteral) failed!")
         self.assertParseAndCheckList(
             "SELECT" + wd + "FROM" + wd,
             "select color from colors",
             expected_list=["SELECT", "color", "FROM", "colors"],
-            msg="inlineLiteralsUsing(CaselessLiteral) failed!",
+            msg="default_literal(CaselessLiteral) failed!",
         )
 
         integer = Word(nums)
-        ParserElement.inlineLiteralsUsing(Literal)
+        default_literal(Literal)
         date_str = integer("year") + "/" + integer("month") + "/" + integer("day")
         # result = date_str.parseString("1999/12/31")
-        # self.assertEqual(result.asList(), ['1999', '/', '12', '/', '31'], "inlineLiteralsUsing(example 1) failed!")
+        # self.assertEqual(result.asList(), ['1999', '/', '12', '/', '31'], "default_literal(example 1) failed!")
         self.assertParseAndCheckList(
             date_str,
             "1999/12/31",
             expected_list=["1999", "/", "12", "/", "31"],
-            msg="inlineLiteralsUsing(example 1) failed!",
+            msg="default_literal(example 1) failed!",
         )
 
         # change to Suppress
-        ParserElement.inlineLiteralsUsing(Suppress)
+        default_literal(Suppress)
         date_str = integer("year") + "/" + integer("month") + "/" + integer("day")
 
         # result = date_str.parseString("1999/12/31")  # -> ['1999', '12', '31']
-        # self.assertEqual(result.asList(), ['1999', '12', '31'], "inlineLiteralsUsing(example 2) failed!")
+        # self.assertEqual(result.asList(), ['1999', '12', '31'], "default_literal(example 2) failed!")
         self.assertParseAndCheckList(
             date_str,
             "1999/12/31",
             expected_list=["1999", "12", "31"],
-            msg="inlineLiteralsUsing(example 2) failed!",
+            msg="default_literal(example 2) failed!",
         )
 
     def testCloseMatch(self):
@@ -6368,6 +6368,8 @@ class Test2_WithoutPackrat(ppt.TestParseResultsAsserts, TestCase):
             print()
 
     def testChainedTernaryOperator(self):
+        print(CURRENT_LITERAL.__name__)
+
         TERNARY_INFIX = pp.infixNotation(
             pp.pyparsing_common.integer, [(("?", ":"), 3, pp.opAssoc.LEFT),]
         )
@@ -6675,10 +6677,8 @@ class PickleTest_Greeting:
 
 class Test3_EnablePackratParsing(TestCase):
     def runTest(self):
+        Test2_WithoutPackrat.suite_context.restore()
         enablePackrat()
-
-        # SAVE A NEW SUITE CONTEXT
-        Test2_WithoutPackrat.suite_context = ppt.reset_pyparsing_context()
         Test2_WithoutPackrat.suite_context.save()
 
 

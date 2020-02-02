@@ -2,6 +2,8 @@ import types
 from collections import OrderedDict
 from threading import RLock
 
+from mo_dots import Data
+
 packrat_enabled = False
 
 
@@ -59,12 +61,12 @@ packrat_cache = (
     {}
 )  # this is set later by enabledPackrat(); this is here so that resetCache() doesn't fail
 packrat_cache_lock = RLock()
-packrat_cache_stats = [0, 0]
-
+packrat_cache_stats = Data()
 
 def resetCache():
     packrat_cache.clear()
-    packrat_cache_stats[:] = [0] * len(packrat_cache_stats)
+    packrat_cache_stats.hit = 0
+    packrat_cache_stats.miss = 0
 
 
 def enablePackrat(cache_size_limit: object = 128) -> object:

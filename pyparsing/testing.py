@@ -3,11 +3,11 @@
 from contextlib import contextmanager
 from unittest import TestCase
 
-from pyparsing import cache
+from pyparsing import cache, core
 from pyparsing.core import (
     ParserElement,
     ParseException,
-    __diag__, DEFAULT_WHITE_CHARS, CURRENT_WHITE_CHARS)
+    __diag__, DEFAULT_WHITE_CHARS, CURRENT_WHITE_CHARS, default_literal)
 from pyparsing.tokens import Keyword
 from pyparsing.utils import __compat__
 
@@ -24,7 +24,7 @@ class reset_pyparsing_context:
     Example:
         with reset_pyparsing_context():
             # test that literals used to construct a grammar are automatically suppressed
-            ParserElement.inlineLiteralsUsing(Suppress)
+            default_literal(Suppress)
 
             term = Word(alphas) | Word(nums)
             group = Group('(' + term[...] + ')')
@@ -43,7 +43,7 @@ class reset_pyparsing_context:
         self._save_context["default_keyword_chars"] = Keyword.DEFAULT_KEYWORD_CHARS
         self._save_context[
             "literal_string_class"
-        ] = ParserElement._literalStringClass
+        ] = core.CURRENT_LITERAL
         self._save_context["packrat_enabled"] = cache.packrat_enabled
         self._save_context["packrat_parse"] = ParserElement._parse
         self._save_context["__diag__"] = {
@@ -64,12 +64,12 @@ class reset_pyparsing_context:
                 self._save_context["default_whitespace"]
             )
         Keyword.DEFAULT_KEYWORD_CHARS = self._save_context["default_keyword_chars"]
-        ParserElement.inlineLiteralsUsing(
+        default_literal(
             self._save_context["literal_string_class"]
         )
         for name, value in self._save_context["__diag__"].items():
             (__diag__.enable if value else __diag__.disable)(name)
-        packrat_enabled = self._save_context["packrat_enabled"]
+        cache.packrat_enabled = self._save_context["packrat_enabled"]
         ParserElement._parse = self._save_context["packrat_parse"]
         __compat__.collect_all_And_tokens = self._save_context["__compat__"]
 

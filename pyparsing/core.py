@@ -40,6 +40,36 @@ def default_whitespace(chars):
     CURRENT_WHITE_CHARS[:] = old_value
 
 
+CURRENT_LITERAL = None
+
+
+def default_literal(cls):
+    """
+    Set class to be used for inclusion of string literals into a parser.
+
+    Example::
+
+        # default literal class used is Literal
+        integer = Word(nums)
+        date_str = integer("year") + '/' + integer("month") + '/' + integer("day")
+
+        date_str.parseString("1999/12/31")  # -> ['1999', '/', '12', '/', '31']
+
+
+        # change to Suppress
+        default_literal(Suppress)
+        date_str = integer("year") + '/' + integer("month") + '/' + integer("day")
+
+        date_str.parseString("1999/12/31")  # -> ['1999', '12', '31']
+    """
+    global CURRENT_LITERAL
+    CURRENT_LITERAL = cls
+
+
+
+
+
+
 class ParserElement(object):
     """Abstract base level parser element class."""
     verbose_stacktrace = False
@@ -71,28 +101,6 @@ class ParserElement(object):
         else:
             self.whiteChars = copy(CURRENT_WHITE_CHARS)
 
-    @staticmethod
-    def inlineLiteralsUsing(cls):
-        """
-        Set class to be used for inclusion of string literals into a parser.
-
-        Example::
-
-            # default literal class used is Literal
-            integer = Word(nums)
-            date_str = integer("year") + '/' + integer("month") + '/' + integer("day")
-
-            date_str.parseString("1999/12/31")  # -> ['1999', '/', '12', '/', '31']
-
-
-            # change to Suppress
-            ParserElement.inlineLiteralsUsing(Suppress)
-            date_str = integer("year") + '/' + integer("month") + '/' + integer("day")
-
-            date_str.parseString("1999/12/31")  # -> ['1999', '12', '31']
-        """
-        ParserElement._literalStringClass = cls
-
     def __init__(self, savelist=False):
         self.parseAction = list()
         self.failAction = None
@@ -119,10 +127,10 @@ class ParserElement(object):
         if expr is None:
             return None
         if isinstance(expr, basestring):
-            if issubclass(self._literalStringClass, Token):
-                return self._literalStringClass(expr)
+            if issubclass(CURRENT_LITERAL, Token):
+                return CURRENT_LITERAL(expr)
             else:
-                return self._literalStringClass(Literal(expr))
+                return CURRENT_LITERAL(Literal(expr))
         if not isinstance(expr, ParserElement):
             warnings.warn("Cannot combine element of type %s with ParserElement" % type(expr),
                           SyntaxWarning, stacklevel=2)
@@ -476,13 +484,12 @@ class ParserElement(object):
     # this method gets repeatedly called during backtracking with the same arguments -
     # we can cache these arguments and save ourselves the trouble of re-parsing the contained expression
     def _parseCache(self, instring, loc, doActions=True, callPreParse=True):
-        HIT, MISS = 0, 1
         lookup = (self, instring, loc, callPreParse, doActions)
         with packrat_cache_lock:
             _cache = cache.packrat_cache
             value = _cache.get(lookup)
             if value is None:
-                packrat_cache_stats[MISS] += 1
+                packrat_cache_stats.miss += 1
                 try:
                     loc, tok = self._parseNoCache(instring, loc, doActions, callPreParse)
                     if not isinstance(tok, ParseResults):
@@ -498,7 +505,7 @@ class ParserElement(object):
                     _cache.set(lookup, (loc, copy(tok)))
                     return loc, tok
             else:
-                packrat_cache_stats[HIT] += 1
+                packrat_cache_stats.hit += 1
                 if isinstance(value, Exception):
                     raise value
                 return value[0], copy(value[1])
