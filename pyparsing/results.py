@@ -546,7 +546,7 @@ class ParseResults(object):
 
         output = internal(self, 0)
         if isinstance(self.type_for_result, Group):
-            return output
+            return simpler(output)
         else:
             return output
 
