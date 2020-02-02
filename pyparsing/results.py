@@ -172,22 +172,25 @@ class ParseResults(object):
                 Log.error("do not know how to handle")
             return
         elif isinstance(k, int):
-            for i, t in enumerate(self.tokens_for_result):
-                if isinstance(t, ParseResults):
-                    ii = len(t)
-                    if k < ii:
-                        t[k] = v
-                        return
-                    else:
-                        k -= ii
-                else:
-                    if k == 0:
-                        self.tokens_for_result[i] = v
-                        return
-                    else:
-                        k -= 1
-
-            Log.error("index {{index}} beyond existing tokens", index=k)
+            if self.replaced_tokens is None:
+                self.replaced_tokens = list(self)
+            self.replaced_tokens[k] = v
+            # for i, t in enumerate(self.tokens_for_result):
+            #     if isinstance(t, ParseResults):
+            #         ii = len(t)
+            #         if k < ii:
+            #             t[k] = v
+            #             return
+            #         else:
+            #             k -= ii
+            #     else:
+            #         if k == 0:
+            #             self.tokens_for_result[i] = v
+            #             return
+            #         else:
+            #             k -= 1
+            #
+            # Log.error("index {{index}} beyond existing tokens", index=k)
         else:
             for i, vv in enumerate(self.tokens_for_result):
                 if get_name(vv) == k:
@@ -577,55 +580,42 @@ class ParseResults(object):
                     name = get_name(obj)
                     if name:
                         # add(open_dict, name, pack(obj.tokens_for_result))
-                        item = pack(obj.tokens_for_result)
+                        od, ol = pack(obj.tokens_for_result)
                         if isinstance(obj.type_for_result, Group):
-                            if isinstance(item, list):
-                                add(open_dict, name, [item])
-                            else:
-                                item = {k: simpler(v) for k, v in item.items()}
-                                add(open_dict, name, [item])
+                            add(open_dict, name, [ol])
+                            for k, v in od.items():
+                                add(open_dict, k, v)
+                            item = {k: simpler(v) for k, v in open_dict.items()}
+                            open_list.append(item)
                         else:
-                            if isinstance(item, list):
-                                add(open_dict, name, item)
-                            else:
-                                item = {k: simpler(v) for k, v in item.items()}
-                                add(open_dict, name, [item])
+                            add(open_dict, name, ol)
+                            for k, v in od.items():
+                                add(open_dict, k, v)
                     elif isinstance(obj.type_for_result, Group):
-                        item = pack(obj.tokens_for_result)
-                        if isinstance(item, list):
-                            pass
-                        else:
-                            item = {k: simpler(v) for k, v in item.items()}
-                        open_list.append(item)
+                        od, ol = pack(obj.tokens_for_result)
+                        for k, v in od.items():
+                            add(open_dict, k, v)
+                        open_list.append(ol)
                     elif isinstance(obj.type_for_result, Suppress):
                         pass
                     else:
-                        item = pack(obj.tokens_for_result)
-                        if isinstance(item, dict):
-                            for k, v in item.items():
-                                add(open_dict, k, v)
-                        else:
-                            open_list.extend(item)
+                        od, ol = pack(obj.tokens_for_result)
+                        open_list.extend(ol)
+                        for k, v in od.items():
+                            add(open_dict, k, v)
                 else:
                     open_list.append(obj)
 
-            if open_dict:
-                return open_dict
-            else:
-                return open_list
+            return open_dict, open_list
 
-        item = pack([self])
-        if isinstance(item, dict):
-            item = {k: simpler(v) for k, v in item.items()}
+        od, ol = pack([self])
+        if od:
+            item = {k: simpler(v) for k, v in od.items()}
             return item
         elif isinstance(self.type_for_result, Group) or get_name(self):
-            # GROUPS ARE EXPECTED TO RETURN A LIST, SO RETURN THAT LIST
-            if isinstance(item[0], list):
-                return {}
-            else:
-                return item[0]
+            return ol
         else:
-            return {}
+            return ol
 
     def __copy__(self):
         """

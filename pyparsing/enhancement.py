@@ -684,7 +684,8 @@ class Group(TokenConverter):
 
         return tokenlist
 
-class Dict(TokenConverter):
+
+class Dict(Group):
     """Converter to return a repetitive expression as a list, but also
     as a dictionary. Each element can also be referenced using the first
     token in the expression as its key. Useful for tabular report
