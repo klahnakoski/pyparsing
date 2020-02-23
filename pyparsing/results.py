@@ -645,9 +645,6 @@ class ParseResults(object):
         else:
             self._parent = None
 
-    def __getnewargs__(self):
-        return self._toklist, self._name, self._modal
-
     def __dir__(self):
         return dir(type(self)) + list(self.keys())
 
